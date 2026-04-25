@@ -57,15 +57,15 @@ All hospitals are in the **Philadelphia metro area (PA)**.
 
 | Hospital | City | State | Rows in prices.csv |
 |---|---|---|---|
-| Riddle Memorial Hospital | Media | PA | 668 |
-| Jefferson Methodist Hospital | Philadelphia | PA | 16,038 |
-| Bryn Mawr Hospital | Bryn Mawr | PA | 668 |
-| Paoli Hospital | Paoli | PA | 668 |
+| Riddle Memorial Hospital | Media | PA | 630 |
+| Jefferson Methodist Hospital | Philadelphia | PA | 15,992 |
+| Bryn Mawr Hospital | Bryn Mawr | PA | 630 |
+| Paoli Hospital | Paoli | PA | 630 |
 | Mercy Fitzgerald Hospital | Darby | PA | 6,947 |
 | Temple University Hospital | Philadelphia | PA | 1,769 |
 | Hospital of the University of Pennsylvania | Philadelphia | PA | 5,450 |
 
-**Total: 32,208 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
+**Total: 32,048 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
 
 ---
 

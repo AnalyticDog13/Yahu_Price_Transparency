@@ -253,6 +253,8 @@ def _process_row(hospital: dict, row: dict) -> dict | None:
         return None
 
     payer = re.sub(r"\s+", " ", str(row.get("payer_name") or "").strip().upper())
+    if not payer:
+        return None
 
     return {
         "hospital_name":      hospital["hospital_name"],

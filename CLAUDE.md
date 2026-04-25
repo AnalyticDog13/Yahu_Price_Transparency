@@ -68,11 +68,14 @@ Pete owns everything from raw CSV to `prices.csv`. Will never touches this.
 ```
 
 **Supported source formats:**
-- CMS v3.x long-format CSV, lowercase column names (St. Francis, Riddle)
-- CMS v3.x long-format CSV, Title/Pascal case column names (Jefferson Methodist)
-- Both handled transparently via column name lowercasing at parse time
+- CMS v3.x long-format CSV, lowercase column names (Riddle, Mercy Fitzgerald, Temple)
+- CMS v3.x long-format CSV, Title/Pascal case column names (Jefferson Methodist, Paoli)
+- CMS XLSX, long-format (Bryn Mawr) — requires `openpyxl`
+- CMS wide-format CSV, payers as columns (HUP) — `--format wide` flag
 
-**Not yet supported:** wide-format (payers as columns), JSON format.
+All formats handled by `parse_hospital_csv()` in `parse_prices.py`.
+
+**Not yet supported:** JSON format (~15% of US hospitals).
 
 ---
 
@@ -118,20 +121,19 @@ Schema (14 columns): `hospital_name`, `hospital_city`, `hospital_state`, `hospit
 ## Current Status
 
 **Done:**
-- `parse_prices.py` — full pipeline, handles multi-million-row CSVs, correct schema
+- `parse_prices.py` — full pipeline; handles long CSV, wide CSV (HUP), and XLSX (Bryn Mawr)
 - `add_hospital.py` — incremental single-hospital append, idempotent (safe to re-run)
-- `app.py` — all 4 API endpoints functional
-- `index.html` — working prototype UI with search form, ranked results, OOP display
-- `prices.csv` — committed, 21,501 rows across 3 hospitals
-- Format normalization — handles both lowercase and Title/Pascal case CMS column names
+- `app.py` — all 5 API endpoints functional and verified against Will's frontend
+- `index.html` — Will's working UI with search form, ranked results, OOP display
+- `prices.csv` — committed, 32,048 rows across 7 Philly-area hospitals (all empty-payer rows removed)
+- `requirements.txt` — `flask>=3.0`, `openpyxl>=3.1`
+- Payer normalization — all payers uppercase + whitespace-collapsed across all hospitals
 
-**In progress / not done:**
-- [ ] Only 3 hospitals (St. Francis, Riddle, Jefferson Methodist) — need 7–10 more in Philly metro
-- [ ] Frontend is a prototype — Will needs to build the production website
-- [ ] No `requirements.txt`
-- [ ] No wide-format or JSON parser
-- [ ] No geographic filtering in API
-- [ ] No hospital lat/lon in registry
+**Remaining / future:**
+- [ ] Frontend production build — Will's domain
+- [ ] JSON format parser (~15% of US hospitals)
+- [ ] Geographic filtering (`hospital_lat`/`hospital_lon`, `/api/prices?near=lat,lon`)
+- [ ] Hosted DB (PostgreSQL) when scaling beyond pilot
 
 ---
 
@@ -139,7 +141,7 @@ Schema (14 columns): `hospital_name`, `hospital_city`, `hospital_state`, `hospit
 
 ```bash
 # Install dependencies
-pip install flask
+pip install -r requirements.txt
 
 # Build prices.csv (Pete's step — requires raw CSVs in hospital-price-data/)
 cd clearcare/backend
