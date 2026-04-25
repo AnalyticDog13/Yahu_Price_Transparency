@@ -17,6 +17,12 @@ import re
 import sqlite3
 import time
 
+try:
+    import openpyxl
+    XLSX_AVAILABLE = True
+except ImportError:
+    XLSX_AVAILABLE = False
+
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "hospital-price-data")
 OUT_CSV  = os.path.join(os.path.dirname(__file__), "data", "prices.csv")
 OUT_DB   = os.path.join(os.path.dirname(__file__), "data", "prices.db")
@@ -81,13 +87,6 @@ PROCEDURE_CATEGORIES = {
 # (or use add_hospital.py to append a single hospital without a full rebuild)
 HOSPITAL_FILES = [
     {
-        "filename":         "510064326_St.-Francis-Hospital-Inc_standardcharges.csv",
-        "hospital_name":    "St. Francis Hospital",
-        "hospital_city":    "Wilmington",
-        "hospital_state":   "DE",
-        "hospital_address": "701 N. Clayton St",
-    },
-    {
         "filename":         "23-1529076_riddle-memorial-hospital_standardcharges.csv",
         "hospital_name":    "Riddle Memorial Hospital",
         "hospital_city":    "Media",
@@ -100,6 +99,43 @@ HOSPITAL_FILES = [
         "hospital_city":    "Philadelphia",
         "hospital_state":   "PA",
         "hospital_address": "2301 S Broad Street",
+    },
+    {
+        "filename":         "231352160_the-bryn-mawr-hospital_standardcharges.xlsx",
+        "hospital_name":    "Bryn Mawr Hospital",
+        "hospital_city":    "Bryn Mawr",
+        "hospital_state":   "PA",
+        "hospital_address": "130 South Bryn Mawr Ave",
+        "xlsx_sheet":       "in",
+    },
+    {
+        "filename":         "23-1352160_paoli-hospital_standardcharges.csv",
+        "hospital_name":    "Paoli Hospital",
+        "hospital_city":    "Paoli",
+        "hospital_state":   "PA",
+        "hospital_address": "255 West Lancaster Avenue",
+    },
+    {
+        "filename":         "231352191_Mercy-Fitzgerald-Hospital_standardcharges.csv",
+        "hospital_name":    "Mercy Fitzgerald Hospital",
+        "hospital_city":    "Darby",
+        "hospital_state":   "PA",
+        "hospital_address": "1500 Lansdowne Avenue",
+    },
+    {
+        "filename":         "232825878_Temple_University_Main_standardcharges.csv",
+        "hospital_name":    "Temple University Hospital",
+        "hospital_city":    "Philadelphia",
+        "hospital_state":   "PA",
+        "hospital_address": "3401 N Broad St",
+    },
+    {
+        "filename":         "231352685_the-trustees-of-the-university-of-pennsylvania-dba-the-hospital-of-the-univer_standardcharges.csv",
+        "hospital_name":    "Hospital of the University of Pennsylvania",
+        "hospital_city":    "Philadelphia",
+        "hospital_state":   "PA",
+        "hospital_address": "3400 Spruce St",
+        "format":           "wide",
     },
 ]
 
@@ -120,35 +156,39 @@ def safe_float(val):
         return None
 
 
-def parse_hospital_csv(hospital: dict) -> list[dict]:
+def _parse_wide_payer_columns(fieldnames: list[str]) -> list[tuple[str, str, str]]:
     """
-    Parse one hospital CSV into normalized rows.
-
-    Handles both lowercase column names (St. Francis, Riddle) and
-    Title/Pascal case column names (Jefferson Methodist) by lowercasing
-    all headers at read time.
+    From a wide-format header, extract (column_name, payer, plan) tuples
+    for every negotiated_dollar column.
+    Column pattern: standard_charge|{payer}|{plan}|negotiated_dollar
     """
-    path = os.path.join(DATA_DIR, hospital["filename"])
-    if not os.path.exists(path):
-        print(f"  SKIPPED (file not found): {hospital['filename']}")
-        return []
+    result = []
+    for col in fieldnames:
+        parts = col.split("|")
+        if len(parts) == 4 and parts[0] == "standard_charge" and parts[3] == "negotiated_dollar":
+            result.append((col, parts[1].strip(), parts[2].strip()))
+    return result
 
+
+def _parse_wide_csv(hospital: dict, path: str) -> list[dict]:
+    """
+    Parse a wide-format CMS CSV where each payer is a set of columns.
+    Pivots to long format: one output row per (procedure, payer) pair.
+    """
     rows = []
-    t0 = time.time()
-    print(f"  Parsing {hospital['hospital_name']} …")
-
     with open(path, encoding="utf-8-sig", errors="replace") as f:
-        next(f)  # hospital metadata header row
-        next(f)  # hospital metadata values row
+        next(f)  # metadata header
+        next(f)  # metadata values
         reader = csv.DictReader(f)
-        # Normalize column names to lowercase — handles both format variants
-        reader.fieldnames = [h.lower() for h in reader.fieldnames]
+
+        payer_cols = _parse_wide_payer_columns(reader.fieldnames)
 
         for i, row in enumerate(reader):
+            # Find matching CPT code
             cpt_code = None
             for slot in range(1, 6):
-                code  = row.get(f"code|{slot}", "").strip()
-                ctype = row.get(f"code|{slot}|type", "").strip().upper()
+                code  = str(row.get(f"code|{slot}") or "").strip()
+                ctype = str(row.get(f"code|{slot}|type") or "").strip().upper()
                 if ctype in ("CPT", "HCPCS") and code in PROCEDURE_CODES:
                     cpt_code = code
                     break
@@ -156,34 +196,142 @@ def parse_hospital_csv(hospital: dict) -> list[dict]:
             if not cpt_code:
                 continue
 
-            negotiated = safe_float(row.get("standard_charge|negotiated_dollar"))
-            cash       = safe_float(row.get("standard_charge|discounted_cash"))
-            gross      = safe_float(row.get("standard_charge|gross"))
+            cash  = safe_float(row.get("standard_charge|discounted_cash"))
+            gross = safe_float(row.get("standard_charge|gross"))
 
-            if negotiated is None and cash is None:
-                continue
+            # Emit one row per payer that has a dollar value
+            for col, payer, plan in payer_cols:
+                negotiated = safe_float(row.get(col))
+                if negotiated is None:
+                    continue
 
-            payer = re.sub(r"\s+", " ", row.get("payer_name", "").strip().upper())
+                payer_norm = re.sub(r"\s+", " ", payer.upper())
+                rows.append({
+                    "hospital_name":      hospital["hospital_name"],
+                    "hospital_city":      hospital["hospital_city"],
+                    "hospital_state":     hospital["hospital_state"],
+                    "hospital_address":   hospital["hospital_address"],
+                    "procedure_category": PROCEDURE_CATEGORIES[cpt_code],
+                    "procedure_name":     PROCEDURE_CODES[cpt_code],
+                    "cpt_code":           cpt_code,
+                    "payer":              payer_norm,
+                    "plan":               plan,
+                    "negotiated_dollar":  negotiated,
+                    "discounted_cash":    cash,
+                    "gross_charge":       gross,
+                    "setting":            str(row.get("setting") or "").strip().lower(),
+                    "billing_class":      str(row.get("billing_class") or "").strip().lower(),
+                })
 
-            rows.append({
-                "hospital_name":      hospital["hospital_name"],
-                "hospital_city":      hospital["hospital_city"],
-                "hospital_state":     hospital["hospital_state"],
-                "hospital_address":   hospital["hospital_address"],
-                "procedure_category": PROCEDURE_CATEGORIES[cpt_code],
-                "procedure_name":     PROCEDURE_CODES[cpt_code],
-                "cpt_code":           cpt_code,
-                "payer":              payer,
-                "plan":               row.get("plan_name", "").strip(),
-                "negotiated_dollar":  negotiated,
-                "discounted_cash":    cash,
-                "gross_charge":       gross,
-                "setting":            row.get("setting", "").strip().lower(),
-                "billing_class":      row.get("billing_class", "").strip().lower(),
-            })
-
-            if i % 500_000 == 0 and i > 0:
+            if i % 100_000 == 0 and i > 0:
                 print(f"    … {i:,} rows scanned ({len(rows):,} matches)")
+
+    return rows
+
+
+def _process_row(hospital: dict, row: dict) -> dict | None:
+    """
+    Shared row-processing logic for both CSV and XLSX parsers.
+    Returns a normalized dict or None if the row should be skipped.
+    """
+    cpt_code = None
+    for slot in range(1, 6):
+        code  = str(row.get(f"code|{slot}") or "").strip()
+        ctype = str(row.get(f"code|{slot}|type") or "").strip().upper()
+        if ctype in ("CPT", "HCPCS") and code in PROCEDURE_CODES:
+            cpt_code = code
+            break
+
+    if not cpt_code:
+        return None
+
+    negotiated = safe_float(row.get("standard_charge|negotiated_dollar"))
+    cash       = safe_float(row.get("standard_charge|discounted_cash"))
+    gross      = safe_float(row.get("standard_charge|gross"))
+
+    if negotiated is None and cash is None:
+        return None
+
+    payer = re.sub(r"\s+", " ", str(row.get("payer_name") or "").strip().upper())
+
+    return {
+        "hospital_name":      hospital["hospital_name"],
+        "hospital_city":      hospital["hospital_city"],
+        "hospital_state":     hospital["hospital_state"],
+        "hospital_address":   hospital["hospital_address"],
+        "procedure_category": PROCEDURE_CATEGORIES[cpt_code],
+        "procedure_name":     PROCEDURE_CODES[cpt_code],
+        "cpt_code":           cpt_code,
+        "payer":              payer,
+        "plan":               str(row.get("plan_name") or "").strip(),
+        "negotiated_dollar":  negotiated,
+        "discounted_cash":    cash,
+        "gross_charge":       gross,
+        "setting":            str(row.get("setting") or "").strip().lower(),
+        "billing_class":      str(row.get("billing_class") or "").strip().lower(),
+    }
+
+
+def parse_hospital_csv(hospital: dict) -> list[dict]:
+    """
+    Parse one hospital file (CSV or XLSX) into normalized rows.
+
+    CSV: handles both lowercase (St. Francis, Riddle) and Title/Pascal case
+         (Jefferson Methodist) column names by lowercasing headers at read time.
+    XLSX: reads via openpyxl; same 2-row metadata header structure as CSV.
+          Requires 'xlsx_sheet' key in hospital dict (defaults to first sheet).
+    """
+    path = os.path.join(DATA_DIR, hospital["filename"])
+    if not os.path.exists(path):
+        print(f"  SKIPPED (file not found): {hospital['filename']}")
+        return []
+
+    fmt = hospital.get("format", "long")
+    ext = os.path.splitext(hospital["filename"])[1].lower()
+    rows = []
+    t0 = time.time()
+    print(f"  Parsing {hospital['hospital_name']} ({ext}, {fmt}-format) …")
+
+    if fmt == "wide":
+        rows = _parse_wide_csv(hospital, path)
+
+    elif ext == ".xlsx":
+        if not XLSX_AVAILABLE:
+            print("  SKIPPED — openpyxl not installed. Run: pip install openpyxl")
+            return []
+
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        sheet_name = hospital.get("xlsx_sheet", wb.sheetnames[0])
+        ws = wb[sheet_name]
+        iter_rows = ws.iter_rows(values_only=True)
+
+        next(iter_rows)  # metadata header row
+        next(iter_rows)  # metadata values row
+        headers = [str(h).lower() if h is not None else "" for h in next(iter_rows)]
+
+        for i, raw_row in enumerate(iter_rows):
+            row = dict(zip(headers, raw_row))
+            result = _process_row(hospital, row)
+            if result:
+                rows.append(result)
+            if i % 100_000 == 0 and i > 0:
+                print(f"    … {i:,} rows scanned ({len(rows):,} matches)")
+
+        wb.close()
+
+    else:
+        with open(path, encoding="utf-8-sig", errors="replace") as f:
+            next(f)  # metadata header row
+            next(f)  # metadata values row
+            reader = csv.DictReader(f)
+            reader.fieldnames = [h.lower() for h in reader.fieldnames]
+
+            for i, row in enumerate(reader):
+                result = _process_row(hospital, row)
+                if result:
+                    rows.append(result)
+                if i % 500_000 == 0 and i > 0:
+                    print(f"    … {i:,} rows scanned ({len(rows):,} matches)")
 
     print(f"  Done: {len(rows):,} rows in {time.time() - t0:.1f}s")
     return rows
