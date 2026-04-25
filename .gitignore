@@ -4,7 +4,7 @@
 # Raw hospital price CSVs (too large for GitHub, 55 MB – 1.3 GB each)
 hospital-price-data/
 
-# Generated SQLite database (rebuilt by parse_prices.py)
+# Generated SQLite database (rebuilt by parse_prices.py from the CSV)
 clearcare/static/data/prices.db
 
 # Python
