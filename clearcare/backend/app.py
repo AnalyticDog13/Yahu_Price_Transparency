@@ -50,7 +50,7 @@ def api_payers():
     con = get_db()
     placeholders = ",".join("?" * len(codes))
     rows = con.execute(
-        f"SELECT DISTINCT payer FROM prices WHERE cpt_code IN ({placeholders}) ORDER BY payer",
+        f"SELECT DISTINCT payer FROM prices WHERE cpt_code IN ({placeholders}) AND payer != '' ORDER BY payer",
         codes,
     ).fetchall()
     con.close()
@@ -81,7 +81,7 @@ def api_prices():
     except ValueError:
         coinsurance_pct = 0.20
 
-    if not codes or not payer:
+    if not codes or not payer or payer == "":
         return jsonify({"error": "codes and payer are required"}), 400
 
     con = get_db()
