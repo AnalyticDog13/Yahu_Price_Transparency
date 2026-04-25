@@ -6,9 +6,13 @@ import sqlite3
 
 from flask import Flask, jsonify, render_template, request
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(os.path.dirname(__file__), "..", "frontend"),
+    static_folder=os.path.join(os.path.dirname(__file__), "..", "frontend", "static"),
+)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "static", "data", "prices.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "data", "prices.db")
 
 
 def get_db():
@@ -172,7 +176,7 @@ def index():
 
 if __name__ == "__main__":
     if not os.path.exists(DB_PATH):
-        print(f"ERROR: Database not found at {DB_PATH}")
-        print("Run parse_prices.py first.")
-        exit(1)
+        print("prices.db not found — building from prices.csv …")
+        import subprocess, sys
+        subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "parse_prices.py")], check=True)
     app.run(debug=True, port=5001)

@@ -17,9 +17,9 @@ import re
 import sqlite3
 import time
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "hospital-price-data")
-OUT_CSV  = os.path.join(os.path.dirname(__file__), "static", "data", "prices.csv")
-OUT_DB   = os.path.join(os.path.dirname(__file__), "static", "data", "prices.db")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "hospital-price-data")
+OUT_CSV  = os.path.join(os.path.dirname(__file__), "data", "prices.csv")
+OUT_DB   = os.path.join(os.path.dirname(__file__), "data", "prices.db")
 
 # CPT code → specific procedure name
 PROCEDURE_CODES = {
