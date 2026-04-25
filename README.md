@@ -17,7 +17,13 @@ This hits hardest for the uninsured, underinsured, and anyone with a high-deduct
 
 **ClearCare** aggregates publicly available hospital pricing data and pairs it with a user's specific insurance information to show exactly what they would pay — before they walk in the door.
 
-A user enters their procedure, insurance provider, and deductible status. ClearCare returns a ranked list of nearby hospitals showing their estimated out-of-pocket cost at each one. Same care, lowest price, no surprises.
+A user enters their procedure and insurance provider. ClearCare returns a ranked list of nearby hospitals showing their estimated out-of-pocket cost at each one. Same care, lowest price, no surprises.
+
+### Current Scope — Philadelphia Pilot
+
+This is a pilot project covering **7 hospitals in the Philadelphia metro area**. The procedures covered (MRI, CT, X-ray, ultrasound, CBC blood panel) are standardized diagnostic procedures — the equipment, technique, and CPT billing code are the same regardless of which hospital performs them, making direct price comparison valid and meaningful.
+
+The architecture is built to scale: adding a new metro area is a matter of downloading CMS price files and running `add_hospital.py`. There is no code change required to expand coverage. See [Post-Pilot: Scaling](#post-pilot-scaling-to-other-regions-and-nationwide) for the roadmap.
 
 ---
 
@@ -73,14 +79,12 @@ All hospitals are in the **Philadelphia metro area (PA)**.
 
 ### Frontend (Will)
 
-- [ ] **Build the full website** — replace `index.html` placeholder with a production-quality UI
-- [ ] **Insurance search/autocomplete** — the payer dropdown currently has 100+ options; needs a searchable typeahead input
-- [ ] **Procedure search** — let users type "knee MRI" instead of navigating a dropdown
-- [ ] **Results map view** — show hospital locations on a map alongside the ranked list
-- [ ] **Mobile-responsive design** — most users will be on their phones in a doctor's office
-- [ ] **"No results" handling** — clear messaging when a payer has no data for a procedure at any hospital
-- [ ] **Save / share results** — allow users to bookmark or share their price comparison
-- [ ] **Cash-pay highlight** — make the uninsured self-pay price prominent for patients without coverage
+- [ ] **Remove deductible input** — the deductible fields don't meaningfully affect results at this stage; simplify the form to just procedure + insurance provider
+- [ ] **Filter low-data payers from dropdown** — remove insurance providers that appear at only 1–2 hospitals; they produce near-empty results and confuse users
+- [ ] **Searchable procedure dropdown** — replace the category/code picker with a typeahead so users can type "knee MRI" and get instant matches
+- [ ] **Searchable insurance dropdown** — replace the flat payer list with a searchable typeahead; there are 250+ options and a plain dropdown is unusable
+- [ ] **Polish the UI** — make the website look good; clean layout, consistent typography, clear visual hierarchy on the results cards
+- [ ] **Pilot scope notice** — display a clear banner or note explaining this is a Philadelphia-area pilot covering common diagnostic procedures (MRI, CT, X-ray, ultrasound, CBC); not all insurers or procedures are available
 
 ---
 
