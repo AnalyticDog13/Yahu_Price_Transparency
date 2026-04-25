@@ -122,6 +122,13 @@ HOSPITAL_FILES = [
         "hospital_state":   "PA",
         "hospital_address": "1500 Lansdowne Avenue",
     },
+    {
+        "filename":         "232825878_Temple_University_Main_standardcharges.csv",
+        "hospital_name":    "Temple University Hospital",
+        "hospital_city":    "Philadelphia",
+        "hospital_state":   "PA",
+        "hospital_address": "3401 N Broad St",
+    },
 ]
 
 CSV_COLUMNS = [

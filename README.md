@@ -62,8 +62,9 @@ All hospitals are in the **Philadelphia metro area (PA)**.
 | Bryn Mawr Hospital | Bryn Mawr | PA | 668 |
 | Paoli Hospital | Paoli | PA | 668 |
 | Mercy Fitzgerald Hospital | Darby | PA | 6,947 |
+| Temple University Hospital | Philadelphia | PA | 1,769 |
 
-**Total: 24,989 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
+**Total: 26,758 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
 
 ---
 
@@ -74,7 +75,6 @@ All hospitals are in the **Philadelphia metro area (PA)**.
 - [ ] **Add more Philadelphia-area hospitals** — need 5+ more for a compelling demo showing real price variation across a metro area. Priority targets:
   - Hospital of the University of Pennsylvania (HUP)
   - Pennsylvania Hospital
-  - Temple University Hospital
   - Lankenau Medical Center
   - Chester County Hospital
   - Crozer Health (Crozer-Chester Medical Center)
