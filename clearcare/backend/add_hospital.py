@@ -32,9 +32,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from parse_prices import (
     CSV_COLUMNS,
     parse_hospital_csv,
-    write_db,
     OUT_CSV,
-    OUT_DB,
 )
 
 
@@ -95,7 +93,6 @@ def main():
 
     all_rows = existing + new_rows
     save_csv(all_rows)
-    write_db(all_rows)
 
     # Summary for the new hospital only
     from collections import Counter

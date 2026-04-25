@@ -14,7 +14,6 @@ To add a single new hospital without rebuilding from scratch, use:
 import csv
 import os
 import re
-import sqlite3
 import time
 
 try:
@@ -25,7 +24,6 @@ except ImportError:
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "hospital-price-data")
 OUT_CSV  = os.path.join(os.path.dirname(__file__), "data", "prices.csv")
-OUT_DB   = os.path.join(os.path.dirname(__file__), "data", "prices.db")
 
 # CPT code → specific procedure name
 PROCEDURE_CODES = {
@@ -349,30 +347,6 @@ def write_csv(rows: list[dict]):
     print(f"CSV written  → {OUT_CSV}  ({size_kb:.0f} KB, {len(rows):,} rows)")
 
 
-def write_db(rows: list[dict]):
-    os.makedirs(os.path.dirname(OUT_DB), exist_ok=True)
-    if os.path.exists(OUT_DB):
-        os.remove(OUT_DB)
-    con = sqlite3.connect(OUT_DB)
-    cur = con.cursor()
-    cur.execute(f"""
-        CREATE TABLE prices (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            {', '.join(f'{c} TEXT' for c in CSV_COLUMNS)}
-        )
-    """)
-    cur.executemany(
-        f"INSERT INTO prices ({','.join(CSV_COLUMNS)}) VALUES ({','.join(':'+c for c in CSV_COLUMNS)})",
-        rows,
-    )
-    cur.execute("CREATE INDEX idx_cpt      ON prices(cpt_code)")
-    cur.execute("CREATE INDEX idx_payer    ON prices(payer)")
-    cur.execute("CREATE INDEX idx_hospital ON prices(hospital_name)")
-    con.commit()
-    con.close()
-    print(f"DB written   → {OUT_DB}  ({os.path.getsize(OUT_DB) / 1024:.0f} KB)")
-
-
 def print_summary(rows: list[dict]):
     from collections import Counter
     print("\n=== Summary ===")
@@ -390,7 +364,6 @@ def main():
 
     print(f"\nTotal rows across all hospitals: {len(all_rows):,}")
     write_csv(all_rows)
-    write_db(all_rows)
     print_summary(all_rows)
 
 
