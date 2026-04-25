@@ -131,4 +131,4 @@ Day 1 — Evening
 
 ---
 
-*Built for [Competition Name] · Team [X] · April 2026*
+*Built for Cornell Claude Hackathon · Team Yahu · April 2026*
