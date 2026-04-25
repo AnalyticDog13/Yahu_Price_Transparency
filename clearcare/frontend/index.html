@@ -1129,8 +1129,8 @@
     const maxOop  = Math.max(...oops);
     const savings = maxOop - minOop;
     const deductibleNote = deductible_met === 'yes'
-      ? `after deductible · ${coinsurance}% coinsurance`
-      : `before deductible fully met`;
+      ? `deductible met · ${coinsurance}% coinsurance`
+      : `deductible not yet met`;
 
     let html = `
       <div class="results-header">
