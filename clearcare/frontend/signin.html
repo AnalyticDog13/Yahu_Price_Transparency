@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brahva — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:       #7CB83A;
+      --primary-dark:  #5E9228;
+      --primary-light: #EDF7E2;
+      --bg:            #F3F6FB;
+      --surface:       #FFFFFF;
+      --border:        #DDE5EF;
+      --text-1:        #192638;
+      --text-2:        #495E74;
+      --text-3:        #8496A9;
+      --radius-lg:     20px;
+      --shadow:        0 2px 8px rgba(22,38,60,.06), 0 12px 32px rgba(22,38,60,.09);
+      --ease:          cubic-bezier(0.4, 0, 0.2, 1);
+      --t:             300ms;
+    }
+    html { scroll-behavior: smooth; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg); color: var(--text-1);
+      min-height: 100vh; display: flex; flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      height: 62px; background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);
+      padding: 0 28px; display: flex; align-items: center;
+      box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+    }
+    .logo {
+      font-size: 1.05rem; font-weight: 800; letter-spacing: -.5px;
+      color: var(--primary); text-decoration: none;
+      padding: 6px 18px; border: 1.5px solid var(--primary);
+      border-radius: 999px; line-height: 1; display: flex; align-items: center;
+      transition: background var(--t) var(--ease);
+    }
+    .logo:hover { background: var(--primary-light); }
+
+    .auth-page {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 40px 24px;
+    }
+    .auth-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow); padding: 44px 44px 40px;
+      width: 100%; max-width: 420px;
+    }
+    .auth-eyebrow {
+      font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 8px;
+    }
+    .auth-card h1 {
+      font-size: 1.65rem; font-weight: 800; letter-spacing: -.04em;
+      color: var(--text-1); margin-bottom: 6px;
+    }
+    .auth-card .sub {
+      font-size: .87rem; color: var(--text-2); margin-bottom: 32px; line-height: 1.5;
+    }
+    .auth-card .sub a { color: var(--primary); text-decoration: none; font-weight: 500; }
+    .auth-card .sub a:hover { text-decoration: underline; }
+
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block; font-size: .72rem; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 7px;
+    }
+    .field input {
+      width: 100%; font-family: inherit; font-size: .92rem; color: var(--text-1);
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 11px 14px; outline: none;
+      transition: border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+    }
+    .field input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3.5px rgba(124,184,58,0.12);
+    }
+    .forgot {
+      display: block; text-align: right; margin-top: 6px;
+      font-size: .78rem; color: var(--text-3); text-decoration: none;
+      transition: color var(--t) var(--ease);
+    }
+    .forgot:hover { color: var(--primary); }
+
+    .btn-auth {
+      width: 100%; padding: 13px; margin-top: 8px;
+      background: var(--primary); color: #fff; border: 1.5px solid var(--primary);
+      border-radius: 10px; font-size: .94rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background var(--t) var(--ease), color var(--t) var(--ease), transform var(--t) var(--ease);
+    }
+    .btn-auth:hover { background: #fff; color: var(--primary); transform: translateY(-1px); }
+    .btn-auth:active { transform: translateY(0); }
+
+    .no-account {
+      margin-top: 20px; font-size: .78rem; color: var(--text-3); text-align: center;
+    }
+    .no-account a { color: var(--primary); text-decoration: none; font-weight: 500; }
+    .no-account a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">Brahva</a>
+</header>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-eyebrow">Welcome Back</div>
+    <h1>Sign in</h1>
+    <p class="sub">Don't have an account? <a href="/signup">Sign up</a></p>
+
+    <form onsubmit="event.preventDefault()">
+      <div class="field">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="jane@example.com" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Your password" />
+        <a href="#" class="forgot" onclick="event.preventDefault()">Forgot password?</a>
+      </div>
+      <button type="submit" class="btn-auth">Sign In</button>
+    </form>
+
+    <p class="no-account"><a href="/">Continue without an account</a></p>
+  </div>
+</div>
+
+</body>
+</html>

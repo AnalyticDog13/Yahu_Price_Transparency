@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brahva — Support</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:       #7CB83A;
+      --primary-dark:  #5E9228;
+      --primary-light: #EDF7E2;
+      --bg:            #F3F6FB;
+      --surface:       #FFFFFF;
+      --border:        #DDE5EF;
+      --text-1:        #192638;
+      --text-2:        #495E74;
+      --text-3:        #8496A9;
+      --radius:        14px;
+      --radius-lg:     20px;
+      --shadow:        0 2px 8px rgba(22,38,60,.06), 0 12px 32px rgba(22,38,60,.09);
+      --ease:          cubic-bezier(0.4, 0, 0.2, 1);
+      --t:             300ms;
+    }
+
+    html { scroll-behavior: smooth; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 62px; background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+      padding: 0 28px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .logo {
+      font-size: 1.05rem; font-weight: 800; letter-spacing: -.5px;
+      color: var(--primary); text-decoration: none;
+      padding: 6px 18px;
+      border: 1.5px solid var(--primary);
+      border-radius: 999px;
+      line-height: 1; display: flex; align-items: center;
+      transition: background var(--t) var(--ease);
+    }
+    .logo:hover { background: var(--primary-light); }
+
+    .header-nav { display: flex; align-items: center; gap: 4px; margin-left: 16px; }
+    .nav-link {
+      font-size: .82rem; font-weight: 500; color: var(--text-2);
+      text-decoration: none; padding: 6px 12px; border-radius: 8px;
+      line-height: 1; display: flex; align-items: center;
+      transition: color var(--t) var(--ease), background var(--t) var(--ease);
+    }
+    .nav-link:hover { color: var(--text-1); background: var(--bg); }
+    .nav-link.active { color: var(--primary); }
+
+    .header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .btn-sign-in {
+      font-family: inherit; font-size: .82rem; font-weight: 500; cursor: pointer;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-2); padding: 7px 16px; border-radius: 10px;
+      transition: background var(--t) var(--ease), color var(--t) var(--ease);
+    }
+    .btn-sign-in:hover { background: var(--bg); color: var(--text-1); }
+    .btn-sign-up {
+      font-family: inherit; font-size: .82rem; font-weight: 600; cursor: pointer;
+      background: var(--primary); border: 1px solid var(--primary); color: #fff;
+      padding: 7px 16px; border-radius: 10px;
+      transition: background var(--t) var(--ease);
+    }
+    .btn-sign-up:hover { background: #fff; color: var(--primary); border-color: var(--primary); }
+
+    /* ── Page ── */
+    .page {
+      padding: 110px 24px 80px;
+      max-width: 600px; margin: 0 auto;
+    }
+
+    .page-eyebrow {
+      font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 12px;
+    }
+    .page h1 {
+      font-size: clamp(1.7rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -.04em;
+      color: var(--text-1); margin-bottom: 10px;
+    }
+    .page-sub {
+      font-size: .96rem; color: var(--text-2); line-height: 1.65; margin-bottom: 40px;
+    }
+
+    /* ── Form card ── */
+    .form-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 36px 40px;
+    }
+
+    .field { margin-bottom: 22px; }
+    .field label {
+      display: block;
+      font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 8px;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      font-family: inherit; font-size: .92rem; color: var(--text-1);
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 11px 14px;
+      outline: none;
+      transition: border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+      resize: vertical;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3.5px rgba(124,184,58,0.12);
+    }
+    .field textarea { min-height: 130px; }
+    .field select { appearance: none; cursor: pointer; }
+
+    .btn-submit {
+      width: 100%; padding: 13px;
+      background: var(--primary); color: #fff; border: none;
+      border-radius: 10px; font-size: .94rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background var(--t) var(--ease), transform var(--t) var(--ease);
+      margin-top: 4px;
+    }
+    .btn-submit:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0); }
+
+    .success-msg {
+      display: none;
+      margin-top: 16px; padding: 14px 18px;
+      background: var(--primary-light); border: 1px solid rgba(124,184,58,0.3);
+      border-radius: 10px;
+      font-size: .87rem; color: var(--primary-dark); font-weight: 500;
+      text-align: center;
+    }
+    .success-msg.show { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">Brahva</a>
+  <nav class="header-nav">
+    <a href="/" class="nav-link">How it Works</a>
+    <a href="/support" class="nav-link active">Support</a>
+  </nav>
+  <div class="header-actions">
+    <button class="btn-sign-in" onclick="location.href='/signin'">Sign in</button>
+    <button class="btn-sign-up" onclick="location.href='/signup'">Sign up</button>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-eyebrow">Support</div>
+  <h1>How can we help?</h1>
+  <p class="page-sub">Send us a message and we'll get back to you as soon as we can.</p>
+
+  <div class="form-card">
+    <form id="support-form" onsubmit="handleSubmit(event)">
+      <div class="field">
+        <label for="name">Your Name</label>
+        <input type="text" id="name" placeholder="Jane Smith" required />
+      </div>
+      <div class="field">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="jane@example.com" required />
+      </div>
+      <div class="field">
+        <label for="topic">Topic</label>
+        <select id="topic" required>
+          <option value="" disabled selected>Select a topic</option>
+          <option>Incorrect price data</option>
+          <option>Missing hospital or procedure</option>
+          <option>Insurance / payer issue</option>
+          <option>Bug or technical problem</option>
+          <option>General feedback</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="message">Message</label>
+        <textarea id="message" placeholder="Describe your issue or feedback..." required></textarea>
+      </div>
+      <button type="submit" class="btn-submit">Submit</button>
+    </form>
+    <div class="success-msg" id="success-msg">
+      Thanks for reaching out! We'll follow up at your email shortly.
+    </div>
+  </div>
+</div>
+
+<script>
+  function handleSubmit(e) {
+    e.preventDefault();
+    document.getElementById('support-form').reset();
+    const msg = document.getElementById('success-msg');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 4000);
+  }
+</script>
+</body>
+</html>

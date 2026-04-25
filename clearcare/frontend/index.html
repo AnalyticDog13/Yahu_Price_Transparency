@@ -87,13 +87,15 @@
       top: 0; left: 0; right: 0;
       z-index: 100;
       height: 62px;
-      background: transparent;
-      border-bottom: 1px solid transparent;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255,255,255,0.18);
       padding: 0 28px;
       display: flex;
       align-items: center;
       gap: 14px;
-      transition: background var(--t) var(--ease), border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+      transition: background var(--t) var(--ease), border-color var(--t) var(--ease), box-shadow var(--t) var(--ease), top 0.3s var(--ease);
     }
     header.scrolled {
       background: rgba(255,255,255,0.88);
@@ -155,11 +157,11 @@
       padding: 7px 16px; border-radius: 10px;
       transition: background var(--t) var(--ease), box-shadow var(--t) var(--ease);
     }
-    .btn-sign-up:hover { background: rgba(255,255,255,0.9); box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+    .btn-sign-up:hover { background: transparent; color: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
     header.scrolled .btn-sign-up {
       background: var(--primary); border-color: var(--primary); color: #fff;
     }
-    header.scrolled .btn-sign-up:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+    header.scrolled .btn-sign-up:hover { background: #fff; color: var(--primary); border-color: var(--primary); }
 
     /* ── How it Works section ── */
     .hiw-section {
@@ -565,13 +567,14 @@
 
 <!-- ── Header ── -->
 <header id="site-header">
-  <div class="logo">Brahva</div>
+  <a href="/" class="logo">Brahva</a>
   <nav class="header-nav">
     <a href="#how-it-works" class="nav-link" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth',block:'center'})">How it Works</a>
+    <a href="/support" class="nav-link">Support</a>
   </nav>
   <div class="header-actions">
-    <button class="btn-sign-in">Sign in</button>
-    <button class="btn-sign-up">Sign up</button>
+    <button class="btn-sign-in" onclick="location.href='/signin'">Sign in</button>
+    <button class="btn-sign-up" onclick="location.href='/signup'">Sign up</button>
   </div>
 </header>
 
@@ -581,7 +584,7 @@
   <div class="hero-overlay"></div>
   <div class="hero-fade"></div>
   <div class="hero-inner">
-    <h1>Know what you'll pay<br>before you walk in.</h1>
+    <h1>Compare hospital prices<br>before you walk in.</h1>
     <p class="hero-desc">Hospital prices for the same procedure can vary by thousands of dollars. Brahva shows you the estimated out-of-pocket cost at hospitals near you — ranked from cheapest to most expensive, based on your insurance.</p>
 
     <div class="hero-features">

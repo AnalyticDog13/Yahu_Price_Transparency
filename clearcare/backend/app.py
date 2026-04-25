@@ -156,6 +156,21 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/support")
+def support():
+    return render_template("support.html")
+
+
+@app.route("/signup")
+def signup():
+    return render_template("signup.html")
+
+
+@app.route("/signin")
+def signin():
+    return render_template("signin.html")
+
+
 if __name__ == "__main__":
     print(f"Loaded {len(PRICES):,} rows from prices.csv")
     app.run(debug=True, port=5001)
