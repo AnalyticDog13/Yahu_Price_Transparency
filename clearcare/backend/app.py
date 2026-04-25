@@ -58,7 +58,10 @@ def api_payers():
     if not codes:
         return jsonify([])
 
-    payers = sorted({r["payer"] for r in PRICES if r["cpt_code"] in codes and r["payer"]})
+    state  = request.args.get("state", "").strip().upper()
+    payers = sorted({r["payer"] for r in PRICES
+                     if r["cpt_code"] in codes and r["payer"]
+                     and (not state or r["hospital_state"] == state)})
     return jsonify(payers)
 
 
@@ -86,12 +89,16 @@ def api_prices():
     except ValueError:
         coinsurance_pct = 0.20
 
+    state = request.args.get("state", "").strip().upper()
+
     if not codes or not payer:
         return jsonify({"error": "codes and payer are required"}), 400
 
     # Rows for this payer with a negotiated rate, cheapest first
     insurer_rows = sorted(
-        [r for r in PRICES if r["cpt_code"] in codes and r["payer"] == payer and r["negotiated_dollar"] is not None],
+        [r for r in PRICES if r["cpt_code"] in codes and r["payer"] == payer
+         and r["negotiated_dollar"] is not None
+         and (not state or r["hospital_state"] == state)],
         key=lambda r: r["negotiated_dollar"],
     )
 

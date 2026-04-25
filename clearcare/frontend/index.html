@@ -661,15 +661,10 @@
       </div>
 
       <!-- ZIP code -->
-      <!--
-        TODO: Wire this zip code to a geographic API filter once Pete adds
-        lat/lon to the hospital registry. Currently returns all Philadelphia
-        metro hospitals regardless of zip. See CLAUDE.md for status.
-      -->
       <div class="field-group col-1">
         <label for="zip">Your ZIP Code</label>
-        <input type="text" id="zip" placeholder="e.g. 19103" maxlength="5" inputmode="numeric" />
-        <div class="field-hint">Currently showing Philadelphia metro area hospitals</div>
+        <input type="text" id="zip" placeholder="e.g. 19103 or 10601" maxlength="5" inputmode="numeric" oninput="onZipInput()" />
+        <div class="field-hint" id="zip-hint">Enter your ZIP to show hospitals near you</div>
       </div>
 
       <!-- Payer combobox -->
@@ -721,10 +716,9 @@
 </div><!-- /search-section -->
 
 <!-- ── Data availability notice ── -->
-<!-- TODO: Remove once Pete has loaded all target hospitals -->
 <div class="data-notice" id="data-notice" style="display:none">
   <div class="data-notice-inner">
-    ⚠ Hospital data is still being loaded. Results may not yet include all Philadelphia area hospitals.
+    ⚠ Hospital data is still being loaded. Results may not yet include all hospitals in our coverage area.
   </div>
 </div>
 
@@ -975,7 +969,44 @@
   ───────────────────────────────────────────── */
   let procedureCategories = {};
   let procedureCombo, payerCombo;
+  let detectedState = '';   // 'PA', 'NY', or '' (all)
   const MIN_HOSPITALS_FOR_DEMO = 5;
+
+  /* ── ZIP → region detection ── */
+  function detectRegion(zip) {
+    if (!zip || zip.length < 3) return null;
+    if (zip.startsWith('19')) return { state: 'PA', label: 'Philadelphia area hospitals' };
+    const p3 = zip.slice(0, 3);
+    if (['105','106','107','108','109'].includes(p3)) return { state: 'NY', label: 'Westchester, NY hospitals' };
+    return null;
+  }
+
+  function onZipInput() {
+    const zip    = document.getElementById('zip').value.trim();
+    const hint   = document.getElementById('zip-hint');
+    const region = detectRegion(zip);
+
+    const prevState = detectedState;
+
+    if (!zip) {
+      detectedState = '';
+      hint.textContent = 'Enter your ZIP to show hospitals near you';
+    } else if (region) {
+      detectedState = region.state;
+      hint.textContent = region.label;
+    } else if (zip.length === 5) {
+      detectedState = '';
+      hint.textContent = 'ZIP not in our coverage area — showing all hospitals';
+    } else {
+      detectedState = '';
+      hint.textContent = 'Enter your ZIP to show hospitals near you';
+    }
+
+    // Reload payers for the new region if a procedure is already selected
+    if (detectedState !== prevState && procedureCombo && procedureCombo.getValue()) {
+      onProcedureChange(procedureCombo.getValue());
+    }
+  }
 
   /* ── Init ── */
   async function init() {
@@ -1022,8 +1053,10 @@
     payerCombo.setPlaceholder('Loading insurers…');
 
     try {
-      const codes = procedureCategories[cat].join(',');
-      const res   = await fetch(`/api/payers?codes=${encodeURIComponent(codes)}`);
+      const codes  = procedureCategories[cat].join(',');
+      const params = new URLSearchParams({ codes });
+      if (detectedState) params.set('state', detectedState);
+      const res    = await fetch(`/api/payers?${params}`);
       const payers = await res.json();
 
       if (!payers.length) {
@@ -1091,8 +1124,6 @@
     const deductible_met       = document.getElementById('deductible_met').value;
     const deductible_remaining = document.getElementById('deductible_remaining').value || '0';
     const coinsurance          = document.getElementById('coinsurance').value || '20';
-    // zip is captured but not sent to API yet — see TODO above
-    // const zip = document.getElementById('zip').value;
 
     const section = document.getElementById('results-section');
     section.classList.add('visible');
@@ -1102,6 +1133,7 @@
     let data;
     try {
       const params = new URLSearchParams({ codes, payer, deductible_met, deductible_remaining, coinsurance });
+      if (detectedState) params.set('state', detectedState);
       const res = await fetch(`/api/prices?${params}`);
       data = await res.json();
     } catch {

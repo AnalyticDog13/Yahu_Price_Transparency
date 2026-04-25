@@ -154,6 +154,64 @@ def safe_float(val):
         return None
 
 
+def _parse_json(hospital: dict, path: str) -> list[dict]:
+    """
+    Parse a CMS v3.x JSON file.
+    Structure: { standard_charge_information: [ { description, code_information, standard_charges } ] }
+    """
+    import json
+    rows = []
+    with open(path, encoding="utf-8-sig") as f:
+        data = json.load(f)
+
+    for i, item in enumerate(data.get("standard_charge_information", [])):
+        cpt_code = None
+        for code_info in item.get("code_information", []):
+            code  = str(code_info.get("code") or "").strip()
+            ctype = str(code_info.get("type") or "").strip().upper()
+            if ctype in ("CPT", "HCPCS") and code in PROCEDURE_CODES:
+                cpt_code = code
+                break
+
+        if not cpt_code:
+            continue
+
+        for charge in item.get("standard_charges", []):
+            gross   = safe_float(str(charge.get("gross_charges") or "").replace(",", ""))
+            cash    = safe_float(charge.get("discounted_cash"))
+            setting = str(charge.get("setting") or "").strip().lower()
+            billing = str(charge.get("billing_class") or "").strip().lower()
+
+            for payer_info in charge.get("payers_information", []):
+                negotiated = safe_float(payer_info.get("standard_charge_dollar"))
+                if negotiated is None:
+                    continue
+                payer = re.sub(r"\s+", " ", str(payer_info.get("payer_name") or "").strip().upper())
+                if not payer:
+                    continue
+                rows.append({
+                    "hospital_name":      hospital["hospital_name"],
+                    "hospital_city":      hospital["hospital_city"],
+                    "hospital_state":     hospital["hospital_state"],
+                    "hospital_address":   hospital["hospital_address"],
+                    "procedure_category": PROCEDURE_CATEGORIES[cpt_code],
+                    "procedure_name":     PROCEDURE_CODES[cpt_code],
+                    "cpt_code":           cpt_code,
+                    "payer":              payer,
+                    "plan":               str(payer_info.get("plan_name") or "").strip(),
+                    "negotiated_dollar":  negotiated,
+                    "discounted_cash":    cash,
+                    "gross_charge":       gross,
+                    "setting":            setting,
+                    "billing_class":      billing,
+                })
+
+        if i % 10_000 == 0 and i > 0:
+            print(f"    … {i:,} items scanned ({len(rows):,} matches)")
+
+    return rows
+
+
 def _parse_wide_payer_columns(fieldnames: list[str]) -> list[tuple[str, str, str]]:
     """
     From a wide-format header, extract (column_name, payer, plan) tuples
@@ -294,6 +352,9 @@ def parse_hospital_csv(hospital: dict) -> list[dict]:
 
     if fmt == "wide":
         rows = _parse_wide_csv(hospital, path)
+
+    elif ext == ".json":
+        rows = _parse_json(hospital, path)
 
     elif ext == ".xlsx":
         if not XLSX_AVAILABLE:
