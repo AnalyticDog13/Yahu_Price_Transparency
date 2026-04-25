@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClearCare — Know Your Price Before You Go</title>
+  <style>
+    :root {
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --blue-light: #eff6ff;
+      --green: #16a34a;
+      --green-light: #f0fdf4;
+      --red: #dc2626;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-600: #4b5563;
+      --gray-800: #1f2937;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+    }
+
+    /* ── Nav ── */
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--blue);
+      letter-spacing: -.5px;
+    }
+    .logo span { color: var(--gray-800); }
+    .tagline {
+      font-size: .8rem;
+      color: var(--gray-400);
+      border-left: 1px solid var(--gray-200);
+      padding-left: 10px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+      color: #fff;
+      text-align: center;
+      padding: 56px 24px 80px;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .hero p {
+      font-size: 1.05rem;
+      opacity: .85;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ── Search card ── */
+    .card-wrapper {
+      max-width: 800px;
+      margin: -40px auto 40px;
+      padding: 0 16px;
+    }
+
+    .search-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px;
+    }
+
+    .search-card h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-size: .75rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    @media (max-width: 560px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .full { grid-column: auto; }
+    }
+
+    label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    select, input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: .95rem;
+      color: var(--gray-800);
+      background: #fff;
+      appearance: none;
+      transition: border-color .15s;
+    }
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+    .deductible-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .deductible-row > div { flex: 1; }
+
+    /* toggle chips */
+    .chip-group { display: flex; gap: 8px; }
+    .chip {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: .9rem;
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
+    }
+    .chip.active {
+      border-color: var(--blue);
+      background: var(--blue-light);
+      color: var(--blue);
+      font-weight: 600;
+    }
+
+    .btn-search {
+      width: 100%;
+      padding: 14px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+      margin-top: 8px;
+    }
+    .btn-search:hover { background: var(--blue-dark); }
+    .btn-search:disabled { background: var(--gray-400); cursor: not-allowed; }
+
+    /* ── Results ── */
+    .results-wrapper {
+      max-width: 800px;
+      margin: 0 auto 60px;
+      padding: 0 16px;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 16px;
+    }
+    .results-header h3 { font-size: 1.1rem; font-weight: 700; }
+    .results-count { font-size: .85rem; color: var(--gray-400); }
+
+    .hospital-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+      animation: fadeUp .25s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hospital-card:nth-child(1) { animation-delay: 0s; }
+    .hospital-card:nth-child(2) { animation-delay: .06s; }
+    .hospital-card:nth-child(3) { animation-delay: .12s; }
+
+    .hospital-card.best { border-left: 4px solid var(--green); }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--gray-100);
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--gray-600);
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .best .rank-badge { background: var(--green); color: #fff; }
+
+    .hospital-name {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .best-badge {
+      font-size: .7rem;
+      font-weight: 700;
+      background: var(--green-light);
+      color: var(--green);
+      border: 1px solid #bbf7d0;
+      padding: 1px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+
+    .price-details {
+      font-size: .85rem;
+      color: var(--gray-600);
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .price-detail { display: flex; flex-direction: column; gap: 2px; }
+    .price-detail .label { font-size: .7rem; text-transform: uppercase; color: var(--gray-400); font-weight: 600; }
+    .price-detail .value { font-size: .9rem; font-weight: 600; color: var(--gray-800); }
+
+    .oop-col { text-align: right; }
+    .oop-label { font-size: .7rem; text-transform: uppercase; color: var(--gray-400); font-weight: 600; }
+    .oop-amount {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--blue);
+      line-height: 1;
+    }
+    .best .oop-amount { color: var(--green); }
+    .oop-note { font-size: .7rem; color: var(--gray-400); margin-top: 2px; }
+
+    /* cash-pay row */
+    .cash-row {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--gray-100);
+      font-size: .82rem;
+      color: var(--gray-600);
+    }
+    .cash-row strong { color: var(--gray-800); }
+
+    /* loader */
+    .loader {
+      text-align: center;
+      padding: 40px;
+      color: var(--gray-400);
+      font-size: .9rem;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--gray-200);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--gray-400);
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .empty-state p { max-width: 360px; margin: 0 auto; line-height: 1.5; }
+
+    .disclaimer {
+      max-width: 800px;
+      margin: 0 auto 32px;
+      padding: 0 16px;
+      font-size: .75rem;
+      color: var(--gray-400);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Clear<span>Care</span></div>
+  <div class="tagline">GoodRx for hospitals</div>
+</header>
+
+<div class="hero">
+  <h1>Know what you'll pay<br>before you walk in.</h1>
+  <p>Enter your procedure and insurance — we'll show you exactly what each hospital will cost you, out of pocket.</p>
+</div>
+
+<div class="card-wrapper">
+  <div class="search-card">
+    <h2>Find Your Price</h2>
+    <div class="form-grid">
+
+      <div class="full">
+        <label for="procedure">Procedure</label>
+        <select id="procedure">
+          <option value="">Loading procedures…</option>
+        </select>
+      </div>
+
+      <div class="full">
+        <label for="payer">Insurance Provider</label>
+        <select id="payer" disabled>
+          <option value="">Select a procedure first</option>
+        </select>
+      </div>
+
+      <div class="full">
+        <label>Have you met your deductible this year?</label>
+        <div class="chip-group">
+          <div class="chip" id="chip-yes" onclick="selectDeductible('yes')">Yes, fully met</div>
+          <div class="chip active" id="chip-no" onclick="selectDeductible('no')">No / not yet</div>
+        </div>
+        <input type="hidden" id="deductible_met" value="no" />
+      </div>
+
+      <div id="deductible-remaining-row">
+        <label for="deductible_remaining">Deductible Remaining ($)</label>
+        <input type="number" id="deductible_remaining" placeholder="e.g. 1500" min="0" step="50" />
+      </div>
+
+      <div>
+        <label for="coinsurance">Your Coinsurance After Deductible (%)</label>
+        <input type="number" id="coinsurance" value="20" min="0" max="100" step="5" />
+      </div>
+
+      <div class="full">
+        <button class="btn-search" id="btn-search" onclick="runSearch()">Search Prices</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="results-wrapper" id="results-wrapper"></div>
+
+<div class="disclaimer">
+  <strong>Disclaimer:</strong> Prices shown are based on publicly available hospital price transparency data (45 CFR 180.50).
+  Actual out-of-pocket costs depend on your specific plan, benefits, and whether services are in-network.
+  Estimates are for informational purposes only and do not constitute a quote or guarantee.
+</div>
+
+<script>
+  let procedureCategories = {};
+  let deductibleMet = 'no';
+
+  async function loadProcedures() {
+    const res = await fetch('/api/procedures');
+    procedureCategories = await res.json();
+
+    const sel = document.getElementById('procedure');
+    sel.innerHTML = '<option value="">— Select a procedure —</option>';
+    for (const cat of Object.keys(procedureCategories).sort()) {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      sel.appendChild(opt);
+    }
+    sel.addEventListener('change', onProcedureChange);
+  }
+
+  async function onProcedureChange() {
+    const cat = document.getElementById('procedure').value;
+    const payerSel = document.getElementById('payer');
+    payerSel.innerHTML = '<option value="">Loading…</option>';
+    payerSel.disabled = true;
+
+    if (!cat) {
+      payerSel.innerHTML = '<option value="">Select a procedure first</option>';
+      return;
+    }
+
+    const codes = procedureCategories[cat].join(',');
+    const res = await fetch(`/api/payers?codes=${encodeURIComponent(codes)}`);
+    const payers = await res.json();
+
+    payerSel.innerHTML = '<option value="">— Select your insurance —</option>';
+
+    // Group payers roughly
+    const groups = {
+      'Aetna': [], 'Blue Cross / BCBS': [], 'Cigna': [],
+      'UnitedHealthcare': [], 'Medicaid': [], 'Medicare': [],
+      'Other': []
+    };
+    for (const p of payers) {
+      const u = p.toUpperCase();
+      if (u.startsWith('AETNA')) groups['Aetna'].push(p);
+      else if (u.includes('BLUE') || u.includes('BCBS') || u.includes('BCN')) groups['Blue Cross / BCBS'].push(p);
+      else if (u.startsWith('CIGNA')) groups['Cigna'].push(p);
+      else if (u.startsWith('UNITED') || u.startsWith('UHC') || u.startsWith('OPTUM')) groups['UnitedHealthcare'].push(p);
+      else if (u.includes('MEDICAID')) groups['Medicaid'].push(p);
+      else if (u.includes('MEDICARE')) groups['Medicare'].push(p);
+      else groups['Other'].push(p);
+    }
+
+    for (const [groupName, list] of Object.entries(groups)) {
+      if (!list.length) continue;
+      const og = document.createElement('optgroup');
+      og.label = groupName;
+      for (const p of list) {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        og.appendChild(opt);
+      }
+      payerSel.appendChild(og);
+    }
+
+    payerSel.disabled = false;
+  }
+
+  function selectDeductible(val) {
+    deductibleMet = val;
+    document.getElementById('deductible_met').value = val;
+    document.getElementById('chip-yes').classList.toggle('active', val === 'yes');
+    document.getElementById('chip-no').classList.toggle('active', val === 'no');
+    document.getElementById('deductible-remaining-row').style.display = val === 'yes' ? 'none' : '';
+  }
+
+  function fmt(n) {
+    if (n == null) return '—';
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  async function runSearch() {
+    const cat = document.getElementById('procedure').value;
+    const payer = document.getElementById('payer').value;
+    if (!cat || !payer) {
+      alert('Please select both a procedure and an insurance provider.');
+      return;
+    }
+
+    const codes = procedureCategories[cat].join(',');
+    const deductible_met = document.getElementById('deductible_met').value;
+    const deductible_remaining = document.getElementById('deductible_remaining').value || '0';
+    const coinsurance = document.getElementById('coinsurance').value || '20';
+
+    const wrapper = document.getElementById('results-wrapper');
+    wrapper.innerHTML = `<div class="loader"><div class="spinner"></div>Looking up prices…</div>`;
+
+    const params = new URLSearchParams({
+      codes, payer, deductible_met, deductible_remaining, coinsurance
+    });
+
+    const res = await fetch(`/api/prices?${params}`);
+    const data = await res.json();
+
+    if (!data.length) {
+      wrapper.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">🔍</div>
+          <p>No negotiated price data found for <strong>${payer}</strong> for this procedure at hospitals in our database.</p>
+        </div>`;
+      return;
+    }
+
+    const deductibleNote = deductible_met === 'yes'
+      ? `after deductible (${coinsurance}% coinsurance)`
+      : `before deductible (full negotiated rate applies)`;
+
+    let html = `
+      <div class="results-header">
+        <h3>${cat} — ${payer}</h3>
+        <span class="results-count">${data.length} result${data.length !== 1 ? 's' : ''}</span>
+      </div>`;
+
+    data.forEach((r, i) => {
+      const isBest = i === 0;
+      html += `
+        <div class="hospital-card ${isBest ? 'best' : ''}">
+          <div>
+            <div class="hospital-name">
+              <span class="rank-badge">${i + 1}</span>
+              ${r.hospital}
+              ${isBest ? '<span class="best-badge">Lowest Cost</span>' : ''}
+            </div>
+            ${r.plan ? `<div style="font-size:.82rem;color:var(--gray-400);margin-top:4px;margin-left:32px;">Plan: ${r.plan}</div>` : ''}
+            <div class="price-details" style="margin-left:32px;">
+              <div class="price-detail">
+                <span class="label">Negotiated Rate</span>
+                <span class="value">${fmt(r.negotiated_dollar)}</span>
+              </div>
+              <div class="price-detail">
+                <span class="label">Gross Charge</span>
+                <span class="value">${fmt(r.gross_charge)}</span>
+              </div>
+            </div>
+            ${r.discounted_cash != null ? `
+            <div class="cash-row" style="margin-left:32px;">
+              No insurance? Self-pay / cash price: <strong>${fmt(r.discounted_cash)}</strong>
+            </div>` : ''}
+          </div>
+          <div class="oop-col">
+            <div class="oop-label">Your Est. Cost</div>
+            <div class="oop-amount">${fmt(r.estimated_oop)}</div>
+            <div class="oop-note">${deductibleNote}</div>
+          </div>
+        </div>`;
+    });
+
+    wrapper.innerHTML = html;
+  }
+
+  loadProcedures();
+</script>
+</body>
+</html>
