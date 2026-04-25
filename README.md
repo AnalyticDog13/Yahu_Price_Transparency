@@ -1,13 +1,10 @@
 # ClearCare — Hospital Price Transparency Platform
-### GoodRx, but for hospitals
-
-> *"We built GoodRx for hospitals — using publicly available pricing data to show patients their true out-of-pocket cost at every hospital in their area, before they walk in the door."*
 
 ---
 
 ## The Problem
 
-The price of an MRI should not depend on which hospital you walk into. Yet across hospitals in the same city, the exact same MRI scan can cost anywhere from $400 to $4,000 — not because the machine is different, or the radiologist is better, but because pricing is completely opaque and patients have no way to compare. Unlike buying a flight or a car, patients show up to a hospital with no idea what they'll pay, and by the time the bill arrives it's too late to shop around.
+The price of an MRI should not depend on which hospital you walk into. Yet across hospitals in the same metro region, the exact same MRI scan can cost anywhere from $300 to $3,000. This isn't because the machine is different, or the radiologist is better, but because pricing is completely opaque and patients have no way to compare. Unlike buying a flight or a car, patients show up to a hospital with no idea what they'll pay, and by the time the bill arrives it's too late to shop around.
 
 This hits hardest for the uninsured, underinsured, and anyone with a high-deductible plan who is effectively paying out of pocket until they hit their deductible — which is most people for routine diagnostic procedures.
 
@@ -23,7 +20,7 @@ A user enters their procedure and insurance provider. ClearCare returns a ranked
 
 This is a pilot project covering **7 hospitals in the Philadelphia metro area**. The procedures covered (MRI, CT, X-ray, ultrasound, CBC blood panel) are standardized diagnostic procedures — the equipment, technique, and CPT billing code are the same regardless of which hospital performs them, making direct price comparison valid and meaningful.
 
-The architecture is built to scale: adding a new metro area is a matter of downloading CMS price files and running `add_hospital.py`. There is no code change required to expand coverage. See [Post-Pilot: Scaling](#post-pilot-scaling-to-other-regions-and-nationwide) for the roadmap.
+The architecture is built to scale: adding new regions only requires downloading CMS price files, checking the file structure and condensing it into a standardized data set, and running `add_hospital.py`. There is no code change required to expand coverage. See [Post-Pilot: Scaling](#post-pilot-scaling-to-other-regions-and-nationwide) for the roadmap.
 
 ---
 
@@ -42,16 +39,16 @@ Yahu_Price_Transparency/
 │
 └── clearcare/
     │
-    ├── backend/                        ← Pete's domain (data pipeline + API)
-    │   ├── parse_prices.py             full rebuild: all hospital CSVs → prices.csv
-    │   ├── add_hospital.py             incremental: add one hospital to prices.csv
+    ├── backend/                        (data pipeline + API)
+    │   ├── parse_prices.py             hospital CSVs → prices.csv
+    │   ├── add_hospital.py             adds one hospital to prices.csv
     │   ├── app.py                      Flask API server (run this to start the backend)
     │   └── data/
-    │       └── prices.csv              ✅ committed — the standardized data handoff file
+    │       └── prices.csv              standardized price file for easy readability
     │
-    └── frontend/                       ← Will's domain (website UI)
-        ├── index.html                  current working UI (starting reference)
-        └── static/                     CSS, JS, images (Will builds this out)
+    └── frontend/                       (website UI)
+        ├── index.html                  current working UI
+        └── static/                     CSS, JS, images
 ```
 
 ---
@@ -91,28 +88,14 @@ All hospitals are in the **Philadelphia metro area (PA)**.
 
 The Philadelphia pilot proves feasibility. Scaling to more regions and eventually nationwide is straightforward because the data pipeline is already generalized — adding a new metro area is just downloading files and running `add_hospital.py`.
 
-### Phase 2 — Expand to Additional Metro Areas
+### Phase 2 — Nationwide Coverage
 
-Each metro area follows the same playbook: identify 5–10 hospitals, download their CMS-mandated price files, run `add_hospital.py` for each. Suggested next regions:
-
-| Metro Area | Why |
-|---|---|
-| New York City | Largest market, extreme price variation documented across boroughs |
-| Houston | Large uninsured population, high concentration of major health systems |
-| Chicago | Strong BCBS/Aetna/UHC market share, good for insurer comparison data |
-| Los Angeles | Large Medicaid population, multiple competing health systems |
-| Boston | High-cost market, academic medical centers vs community hospitals |
-
-**Estimated effort per new metro:** 2–4 hours to download files and run the parser. No code changes required unless a hospital uses an unsupported file format.
-
-### Phase 3 — Nationwide Coverage
-
-To scale to all ~6,000 US hospitals:
+To scale to all US hospitals:
 
 - **Automate file discovery** — CMS publishes a machine-readable index of all hospital price transparency files at `https://www.cms.gov/hospital-price-transparency`. Build a scraper that pulls the file list, downloads new/updated files, and queues them for parsing.
 - **Scheduled rebuilds** — hospitals update their price files periodically (usually annually). Set up a cron job to re-download and re-parse on a schedule, keeping `prices.csv` current.
 - **Format coverage** — the current parser handles long-format CSV (majority), wide-format CSV (e.g. HUP), and XLSX. A JSON parser would cover the remaining ~15% of hospitals.
-- **Cloud storage** — at 6,000 hospitals, `prices.csv` grows to ~500 MB. Move to a hosted database (PostgreSQL on Supabase or similar) rather than a committed CSV file.
+- **Cloud storage** — at 6,000 hospitals, `prices.csv` grows to ~500 MB. Move to a hosted database rather than a committed CSV file.
 - **API performance** — replace the in-memory CSV scan in `app.py` with indexed queries against the hosted DB. Add caching for common procedure+payer combinations.
 - **Geographic filtering** — add `hospital_lat` / `hospital_lon` to the hospital registry and expose a `/api/prices?near=lat,lon&radius=25mi` parameter so the website can show only nearby hospitals.
 
@@ -120,7 +103,7 @@ To scale to all ~6,000 US hospitals:
 
 ## How to Run
 
-### Quick start (for teammates — no raw data files needed)
+### Quick start
 
 `prices.csv` is committed to the repo, so you can run the website immediately after cloning:
 
@@ -136,7 +119,7 @@ Open **http://localhost:5001**.
 
 ---
 
-### Full pipeline (Pete's setup — requires raw CSVs in `hospital-price-data/`)
+### Full pipeline
 
 **Prerequisites:** Python 3.10+
 
@@ -221,23 +204,6 @@ This is the contract between the backend and the frontend. One row = one price f
 
 ---
 
-## Out-of-Pocket Estimation Logic
-
-The API computes estimated patient cost from `negotiated_dollar` plus user-supplied insurance inputs:
-
-```
-# Deductible fully met:
-patient_owes = negotiated_dollar × coinsurance_pct
-
-# Deductible not yet met:
-patient_owes = min(deductible_remaining, negotiated_dollar)
-             + max(0, negotiated_dollar - deductible_remaining) × coinsurance_pct
-```
-
-`coinsurance_pct` is the patient's share after deductible (e.g. 20% = 0.20).
-
----
-
 ## API Endpoints
 
 The Flask backend (`clearcare/backend/app.py`) exposes four endpoints:
@@ -276,4 +242,4 @@ Healthcare price opacity is a regressive tax. ClearCare closes the information g
 
 ---
 
-*Built for Cornell Claude Hackathon · Team Yahu · April 2026*
+*Built for Cornell Claude Hackathon · Team Yahoo · April 2026*
