@@ -16,9 +16,11 @@ This hits hardest for the uninsured, underinsured, and anyone with a high-deduct
 
 A user enters their procedure and insurance provider. ClearCare returns a ranked list of nearby hospitals showing their estimated out-of-pocket cost at each one. Same care, lowest price, no surprises.
 
-### Current Scope — Philadelphia Pilot
+### Current Scope — Philadelphia & Westchester Pilot
 
-This is a pilot project covering **7 hospitals in the Philadelphia metro area**. The procedures covered (MRI, CT, X-ray, ultrasound, CBC blood panel) are standardized diagnostic procedures — the equipment, technique, and CPT billing code are the same regardless of which hospital performs them, making direct price comparison valid and meaningful.
+This pilot covers **12 hospitals across two metro regions**: Philadelphia, PA and Westchester, NY. The procedures covered (MRI, CT, X-ray, ultrasound, CBC blood panel) are standardized diagnostic procedures — the equipment, technique, and CPT billing code are the same regardless of which hospital performs them, making direct price comparison valid and meaningful.
+
+The website automatically detects your region from your ZIP code and shows only the relevant hospitals. Philadelphia-area ZIPs (19xxx) show PA hospitals; Westchester-area ZIPs (105xx–109xx) show NY hospitals.
 
 The architecture is built to scale: adding new regions only requires downloading CMS price files, checking the file structure and condensing it into a standardized data set, and running `add_hospital.py`. There is no code change required to expand coverage. See [Post-Pilot: Scaling](#post-pilot-scaling-to-other-regions-and-nationwide) for the roadmap.
 
@@ -55,19 +57,29 @@ Yahu_Price_Transparency/
 
 ## Current Data Coverage
 
-All hospitals are in the **Philadelphia metro area (PA)**.
+### Philadelphia metro area (PA)
 
-| Hospital | City | State | Rows in prices.csv |
-|---|---|---|---|
-| Riddle Memorial Hospital | Media | PA | 630 |
-| Jefferson Methodist Hospital | Philadelphia | PA | 15,992 |
-| Bryn Mawr Hospital | Bryn Mawr | PA | 630 |
-| Paoli Hospital | Paoli | PA | 630 |
-| Mercy Fitzgerald Hospital | Darby | PA | 6,947 |
-| Temple University Hospital | Philadelphia | PA | 1,769 |
-| Hospital of the University of Pennsylvania | Philadelphia | PA | 5,450 |
+| Hospital | City | Rows |
+|---|---|---|
+| Riddle Memorial Hospital | Media | 630 |
+| Jefferson Methodist Hospital | Philadelphia | 15,992 |
+| Bryn Mawr Hospital | Bryn Mawr | 630 |
+| Paoli Hospital | Paoli | 630 |
+| Mercy Fitzgerald Hospital | Darby | 6,947 |
+| Temple University Hospital | Philadelphia | 1,769 |
+| Hospital of the University of Pennsylvania | Philadelphia | 5,450 |
 
-**Total: 32,048 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
+### Westchester, NY
+
+| Hospital | City | Rows |
+|---|---|---|
+| White Plains Hospital | White Plains | 2,951 |
+| Westchester Medical Center | Valhalla | 1,262 |
+| Montefiore Mount Vernon Hospital | Mount Vernon | 2,679 |
+| Montefiore New Rochelle Hospital | New Rochelle | 2,194 |
+| Phelps Hospital | Sleepy Hollow | 2,376 |
+
+**Total: 43,510 rows** across 12 hospitals, 13 procedure categories, and ~100+ insurance payers per hospital.
 
 ---
 
@@ -94,7 +106,7 @@ To scale to all US hospitals:
 
 - **Automate file discovery** — CMS publishes a machine-readable index of all hospital price transparency files at `https://www.cms.gov/hospital-price-transparency`. Build a scraper that pulls the file list, downloads new/updated files, and queues them for parsing.
 - **Scheduled rebuilds** — hospitals update their price files periodically (usually annually). Set up a cron job to re-download and re-parse on a schedule, keeping `prices.csv` current.
-- **Format coverage** — the current parser handles long-format CSV (majority), wide-format CSV (e.g. HUP), and XLSX. A JSON parser would cover the remaining ~15% of hospitals.
+- **Format coverage** — the current parser handles long-format CSV (majority), wide-format CSV (e.g. HUP), XLSX, and CMS v3.x JSON (e.g. Phelps). All major CMS formats are now supported.
 - **Cloud storage** — at 6,000 hospitals, `prices.csv` grows to ~500 MB. Move to a hosted database rather than a committed CSV file.
 - **API performance** — replace the in-memory CSV scan in `app.py` with indexed queries against the hosted DB. Add caching for common procedure+payer combinations.
 - **Geographic filtering** — add `hospital_lat` / `hospital_lon` to the hospital registry and expose a `/api/prices?near=lat,lon&radius=25mi` parameter so the website can show only nearby hospitals.
@@ -212,8 +224,8 @@ The Flask backend (`clearcare/backend/app.py`) exposes four endpoints:
 |---|---|---|
 | GET | `/` | Serves the frontend UI |
 | GET | `/api/procedures` | Returns all procedure categories and their CPT codes |
-| GET | `/api/payers?codes=70551,70552` | Returns all payers with data for the given CPT codes |
-| GET | `/api/prices?codes=...&payer=...&deductible_met=...&deductible_remaining=...&coinsurance=...` | Ranked results with estimated out-of-pocket per hospital |
+| GET | `/api/payers?codes=70551,70552&state=PA` | Returns payers with data for the given CPT codes; optional `state` filters by region (`PA` or `NY`) |
+| GET | `/api/prices?codes=...&payer=...&deductible_met=...&deductible_remaining=...&coinsurance=...&state=PA` | Ranked results with estimated out-of-pocket per hospital; optional `state` filters by region |
 | GET | `/api/hospitals` | Returns all hospitals |
 
 ### Example API call
