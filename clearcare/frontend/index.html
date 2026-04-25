@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ClearCare — Know Your Price Before You Go</title>
+  <title>Brahva — Know Your Price Before You Go</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     /* ── Design tokens ── */
     :root {
-      --primary:        #3D72B4;
-      --primary-dark:   #2D5A93;
-      --primary-light:  #EBF3FC;
+      --primary:        #7CB83A;
+      --primary-dark:   #5E9228;
+      --primary-light:  #EDF7E2;
 
       --sage:           #52976F;
       --sage-light:     #EAF5EF;
@@ -23,7 +23,7 @@
       --bg:             #F3F6FB;
       --surface:        #FFFFFF;
       --border:         #DDE5EF;
-      --border-focus:   #93B8E2;
+      --border-focus:   #AACF78;
 
       --text-1:         #192638;
       --text-2:         #495E74;
@@ -41,6 +41,7 @@
       --t:              300ms;
     }
 
+    html { scroll-behavior: smooth; }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -58,7 +59,7 @@
       top: 0; left: 0;
       width: 640px; height: 640px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(61,114,180,0.055) 0%, transparent 68%);
+      background: radial-gradient(circle, rgba(124,184,58,0.055) 0%, transparent 68%);
       pointer-events: none;
       z-index: 0;
       will-change: transform;
@@ -102,26 +103,118 @@
       box-shadow: 0 1px 12px rgba(0,0,0,0.06);
     }
     .logo {
-      font-size: 1.15rem; font-weight: 800; letter-spacing: -.65px;
+      font-size: 1.05rem; font-weight: 800; letter-spacing: -.5px;
       color: #fff;
-      transition: color var(--t) var(--ease);
+      text-decoration: none;
+      padding: 6px 18px;
+      border: 1.5px solid rgba(255,255,255,0.55);
+      border-radius: 999px;
+      line-height: 1;
+      display: flex; align-items: center;
+      transition: color var(--t) var(--ease), border-color var(--t) var(--ease), background var(--t) var(--ease);
     }
-    .logo span { color: rgba(255,255,255,0.88); transition: color var(--t) var(--ease); }
-    header.scrolled .logo { color: var(--primary); }
-    header.scrolled .logo span { color: var(--text-1); }
-    .header-region {
+    header.scrolled .logo {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .header-nav {
+      display: flex; align-items: center; gap: 4px;
+      margin-left: 16px;
+    }
+    .nav-link {
+      font-size: .82rem; font-weight: 500; color: rgba(255,255,255,0.82);
+      text-decoration: none; padding: 6px 12px; border-radius: 8px;
+      line-height: 1;
+      display: flex; align-items: center;
+      transition: color var(--t) var(--ease), background var(--t) var(--ease);
+    }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    header.scrolled .nav-link { color: var(--text-2); }
+    header.scrolled .nav-link:hover { color: var(--text-1); background: var(--bg); }
+
+    .header-actions {
       margin-left: auto;
-      font-size: .71rem;
-      display: flex; align-items: center; gap: 7px;
-      background: rgba(255,255,255,0.14); padding: 5px 12px;
-      border-radius: 20px; border: 1px solid rgba(255,255,255,0.24);
-      color: rgba(255,255,255,0.78); font-weight: 500;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-sign-in {
+      font-family: inherit; font-size: .82rem; font-weight: 500; cursor: pointer;
+      background: transparent; border: 1px solid rgba(255,255,255,0.38);
+      color: rgba(255,255,255,0.9); padding: 7px 16px; border-radius: 10px;
       transition: background var(--t) var(--ease), border-color var(--t) var(--ease), color var(--t) var(--ease);
     }
-    header.scrolled .header-region {
-      background: var(--bg); border-color: var(--border); color: var(--text-3);
+    .btn-sign-in:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.6); }
+    header.scrolled .btn-sign-in {
+      border-color: var(--border); color: var(--text-2);
     }
-    .region-dot { width: 6px; height: 6px; border-radius: 50%; background: #7ECFA5; flex-shrink: 0; }
+    header.scrolled .btn-sign-in:hover { background: var(--bg); color: var(--text-1); }
+
+    .btn-sign-up {
+      font-family: inherit; font-size: .82rem; font-weight: 600; cursor: pointer;
+      background: #fff; border: 1px solid #fff; color: var(--primary);
+      padding: 7px 16px; border-radius: 10px;
+      transition: background var(--t) var(--ease), box-shadow var(--t) var(--ease);
+    }
+    .btn-sign-up:hover { background: rgba(255,255,255,0.9); box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+    header.scrolled .btn-sign-up {
+      background: var(--primary); border-color: var(--primary); color: #fff;
+    }
+    header.scrolled .btn-sign-up:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+
+    /* ── How it Works section ── */
+    .hiw-section {
+      background: linear-gradient(to bottom, var(--surface) 0%, var(--bg) 100%);
+      padding: 88px 24px 96px;
+      text-align: center;
+    }
+    .hiw-eyebrow {
+      font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 14px;
+    }
+    .hiw-section h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -.04em;
+      color: var(--text-1); margin-bottom: 14px;
+    }
+    .hiw-section .hiw-sub {
+      font-size: .98rem; color: var(--text-2); max-width: 540px; margin: 0 auto 64px; line-height: 1.65;
+    }
+    .hiw-steps {
+      display: flex; justify-content: center; gap: 0;
+      max-width: 860px; margin: 0 auto; position: relative;
+    }
+    .hiw-steps::before {
+      content: '';
+      position: absolute; top: 30px; left: calc(16.66% + 16px); right: calc(16.66% + 16px);
+      height: 2px; background: var(--border); z-index: 0;
+    }
+    .hiw-step {
+      flex: 1; padding: 0 16px; position: relative; z-index: 1;
+    }
+    .hiw-step-num {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--primary-light); color: var(--primary);
+      font-size: 1rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      border: 2px solid var(--border);
+    }
+    .hiw-step h3 {
+      font-size: .92rem; font-weight: 700; color: var(--text-1); margin-bottom: 8px;
+    }
+    .hiw-step p {
+      font-size: .84rem; color: var(--text-2); line-height: 1.6; max-width: 180px; margin: 0 auto;
+    }
+    .btn-hiw-cta {
+      margin-top: 52px;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 28px;
+      background: transparent; color: var(--primary);
+      border: 1.5px solid var(--primary-dark); border-radius: 50px;
+      font-family: inherit; font-size: .88rem; font-weight: 600; cursor: pointer;
+      opacity: 0.72;
+      transition: opacity var(--t) var(--ease), background var(--t) var(--ease), color var(--t) var(--ease);
+    }
+    .btn-hiw-cta:hover { opacity: 1; background: var(--primary-light); }
 
     /* ── Hero ── */
     .hero {
@@ -141,7 +234,7 @@
       background:
         url('/static/hero-bg.jpg') center 40%/cover no-repeat,
         linear-gradient(160deg, #4a7a5a, #3a6a8c);
-      animation: kenBurns 28s ease-in-out infinite alternate;
+      animation: kenBurns 55s ease-in-out infinite alternate;
       transform-origin: center;
       will-change: transform;
     }
@@ -158,14 +251,21 @@
     /* smooth fade from photo into page background */
     .hero-fade {
       position: absolute; bottom: 0; left: 0; right: 0;
-      height: 160px;
-      background: linear-gradient(to bottom, transparent 0%, #F3F6FB 100%);
+      height: 320px;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(243,246,251,0.15) 25%,
+        rgba(243,246,251,0.45) 50%,
+        rgba(243,246,251,0.78) 72%,
+        #F3F6FB 100%
+      );
       z-index: 1;
       pointer-events: none;
     }
     @keyframes kenBurns {
       from { transform: scale(1.0) translate(0, 0); }
-      to   { transform: scale(1.08) translate(-1%, -1%); }
+      to   { transform: scale(1.06) translate(-0.8%, -0.8%); }
     }
     .hero-inner { position: relative; z-index: 2; width: 100%; max-width: 700px; }
     .hero-eyebrow {
@@ -221,7 +321,11 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.22);
     }
     .btn-hero-cta svg { transition: transform var(--t) var(--ease); }
-    .btn-hero-cta:hover svg { transform: translateX(3px); }
+    .btn-hero-cta:hover svg { transform: translateY(3px); }
+    .hero-no-signup {
+      margin-top: 14px;
+      font-size: .78rem; color: rgba(255,255,255,0.82); letter-spacing: .01em;
+    }
 
     /* Scroll hint */
     .scroll-hint {
@@ -269,7 +373,7 @@
     input[type="number"]:hover, input[type="text"]:hover { border-color: var(--border-focus); }
     input[type="number"]:focus, input[type="text"]:focus {
       outline: none; border-color: var(--primary);
-      box-shadow: 0 0 0 3.5px rgba(61,114,180,0.10);
+      box-shadow: 0 0 0 3.5px rgba(124,184,58,0.10);
     }
     .field-hint { font-size: .67rem; color: var(--text-3); margin-top: 2px; }
 
@@ -291,7 +395,7 @@
     .combobox.open .combo-input,
     .combo-input:focus {
       outline: none; border-color: var(--primary);
-      box-shadow: 0 0 0 3.5px rgba(61,114,180,0.10);
+      box-shadow: 0 0 0 3.5px rgba(124,184,58,0.10);
     }
     .combo-input:disabled { background: var(--bg); color: var(--text-3); cursor: not-allowed; }
     .combobox.disabled .combo-input { background: var(--bg); color: var(--text-3); cursor: not-allowed; }
@@ -367,7 +471,7 @@
       cursor: pointer; font-family: inherit;
       transition: background var(--t) var(--ease), transform var(--t) var(--ease), box-shadow var(--t) var(--ease);
     }
-    .btn-search:hover { background: var(--primary-dark); box-shadow: 0 6px 22px rgba(61,114,180,0.30); transform: translateY(-1px); }
+    .btn-search:hover { background: var(--primary-dark); box-shadow: 0 6px 22px rgba(124,184,58,0.30); transform: translateY(-1px); }
     .btn-search:active { transform: translateY(0); }
     .btn-search:disabled { background: var(--text-3); cursor: not-allowed; transform: none; box-shadow: none; }
 
@@ -415,7 +519,7 @@
     .hospital-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; font-size: .96rem; font-weight: 700; color: var(--text-1); }
     .badge { font-size: .62rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .3px; }
     .badge-best   { background: var(--sage-light);    color: var(--sage);    border: 1px solid rgba(82,151,111,0.22); }
-    .badge-saving { background: var(--primary-light); color: var(--primary); border: 1px solid rgba(61,114,180,0.18); }
+    .badge-saving { background: var(--primary-light); color: var(--primary); border: 1px solid rgba(124,184,58,0.18); }
 
     .hospital-meta { font-size: .76rem; color: var(--text-3); margin-top: 4px; margin-left: 33px; }
 
@@ -442,8 +546,16 @@
     .empty-state p { max-width: 380px; margin: 0 auto; line-height: 1.6; font-size: .87rem; color: var(--text-2); }
     .empty-state .hint { font-size: .78rem; color: var(--text-3); margin-top: 10px; }
 
-    .disclaimer { max-width: 820px; margin: 0 auto 52px; padding: 0 16px; font-size: .7rem; color: var(--text-3); line-height: 1.75; }
-    .disclaimer strong { color: var(--text-2); }
+    .disclaimer {
+      background: #192638;
+      margin-top: 64px;
+      padding: 28px 32px;
+      font-size: .72rem; color: rgba(255,255,255,0.52); line-height: 1.8;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 -8px 28px rgba(0,0,0,0.12);
+    }
+    .disclaimer strong { color: rgba(255,255,255,0.75); }
   </style>
 </head>
 <body>
@@ -453,7 +565,14 @@
 
 <!-- ── Header ── -->
 <header id="site-header">
-  <div class="logo">Clear<span>Care</span></div>
+  <div class="logo">Brahva</div>
+  <nav class="header-nav">
+    <a href="#how-it-works" class="nav-link" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth',block:'center'})">How it Works</a>
+  </nav>
+  <div class="header-actions">
+    <button class="btn-sign-in">Sign in</button>
+    <button class="btn-sign-up">Sign up</button>
+  </div>
 </header>
 
 <!-- ── Hero / Landing ── -->
@@ -463,7 +582,7 @@
   <div class="hero-fade"></div>
   <div class="hero-inner">
     <h1>Know what you'll pay<br>before you walk in.</h1>
-    <p class="hero-desc">Hospital prices for the same procedure can vary by thousands of dollars. ClearCare shows you the estimated out-of-pocket cost at hospitals near you — ranked from cheapest to most expensive, based on your insurance.</p>
+    <p class="hero-desc">Hospital prices for the same procedure can vary by thousands of dollars. Brahva shows you the estimated out-of-pocket cost at hospitals near you — ranked from cheapest to most expensive, based on your insurance.</p>
 
     <div class="hero-features">
       <div class="hero-feature">
@@ -479,9 +598,10 @@
     <button class="btn-hero-cta" onclick="scrollToSearch()">
       Get Started
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 3v10M4 9l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
+    <p class="hero-no-signup">No account needed — free to use</p>
   </div>
 
   <div class="scroll-hint" onclick="scrollToSearch()">
@@ -490,6 +610,31 @@
     </svg>
   </div>
 </div>
+
+<!-- ── How it Works ── -->
+<section class="hiw-section" id="how-it-works">
+  <div class="hiw-eyebrow">How it Works</div>
+  <h2>Prices in seconds, not surprises</h2>
+  <p class="hiw-sub">Brahva pulls from official hospital price transparency files so you can compare your real out-of-pocket cost before your appointment.</p>
+  <div class="hiw-steps">
+    <div class="hiw-step">
+      <div class="hiw-step-num">1</div>
+      <h3>Pick your procedure</h3>
+      <p>Search by procedure name or CPT code — we cover hundreds of common services.</p>
+    </div>
+    <div class="hiw-step">
+      <div class="hiw-step-num">2</div>
+      <h3>Enter your insurance</h3>
+      <p>Select your insurance provider and tell us where you are in your deductible.</p>
+    </div>
+    <div class="hiw-step">
+      <div class="hiw-step-num">3</div>
+      <h3>Compare hospitals</h3>
+      <p>See every nearby hospital ranked from cheapest to most expensive for your specific plan.</p>
+    </div>
+  </div>
+  <button class="btn-hiw-cta" onclick="scrollToSearch()">Get Started ↓</button>
+</section>
 
 <!-- ── Search section ── -->
 <div class="search-section" id="search">
@@ -615,10 +760,20 @@
   })();
 
   /* ─────────────────────────────────────────────
+     Pause Ken Burns when tab is hidden
+  ───────────────────────────────────────────── */
+  (function () {
+    const bg = document.querySelector('.hero-bg');
+    document.addEventListener('visibilitychange', () => {
+      bg.style.animationPlayState = document.hidden ? 'paused' : 'running';
+    });
+  })();
+
+  /* ─────────────────────────────────────────────
      Scroll to search
   ───────────────────────────────────────────── */
   function scrollToSearch() {
-    document.getElementById('search').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.querySelector('.search-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   /* ─────────────────────────────────────────────
