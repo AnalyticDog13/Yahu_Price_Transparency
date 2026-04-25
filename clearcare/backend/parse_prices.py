@@ -115,6 +115,13 @@ HOSPITAL_FILES = [
         "hospital_address": "130 South Bryn Mawr Ave",
         "xlsx_sheet":       "in",
     },
+    {
+        "filename":         "23-1352160_paoli-hospital_standardcharges.csv",
+        "hospital_name":    "Paoli Hospital",
+        "hospital_city":    "Paoli",
+        "hospital_state":   "PA",
+        "hospital_address": "255 West Lancaster Avenue",
+    },
 ]
 
 CSV_COLUMNS = [

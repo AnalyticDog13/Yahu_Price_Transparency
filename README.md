@@ -58,8 +58,10 @@ Yahu_Price_Transparency/
 | St. Francis Hospital | Wilmington | DE | 4,795 |
 | Riddle Memorial Hospital | Media | PA | 668 |
 | Jefferson Methodist Hospital | Philadelphia | PA | 16,038 |
+| Bryn Mawr Hospital | Bryn Mawr | PA | 668 |
+| Paoli Hospital | Paoli | PA | 668 |
 
-**Total: 21,501 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
+**Total: 22,837 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
 
 ---
 
@@ -67,13 +69,11 @@ Yahu_Price_Transparency/
 
 ### Backend (Pete)
 
-- [ ] **Add more Philadelphia-area hospitals** — need 7–10 more for a compelling demo showing real price variation across a metro area. Priority targets:
+- [ ] **Add more Philadelphia-area hospitals** — need 5+ more for a compelling demo showing real price variation across a metro area. Priority targets:
   - Hospital of the University of Pennsylvania (HUP)
   - Pennsylvania Hospital
   - Temple University Hospital
   - Lankenau Medical Center
-  - Bryn Mawr Hospital
-  - Paoli Hospital
   - Chester County Hospital
   - Crozer Health (Crozer-Chester Medical Center)
   - Christiana Hospital (Newark, DE)
