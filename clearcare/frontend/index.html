@@ -587,6 +587,7 @@
   async function onProcedureChange() {
     const cat = document.getElementById('procedure').value;
     const payerSel = document.getElementById('payer');
+    const previousPayer = payerSel.value;
 
     if (!cat) {
       payerSel.innerHTML = '<option value="">Select a procedure first</option>';
@@ -637,6 +638,10 @@
         payerSel.appendChild(og);
       }
       payerSel.disabled = false;
+
+      if (previousPayer) {
+        payerSel.value = previousPayer;
+      }
     } catch {
       payerSel.innerHTML = '<option value="">Error loading insurers</option>';
     }
