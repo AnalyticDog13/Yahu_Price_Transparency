@@ -52,7 +52,7 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* ── Cursor glow ── */
+    /* ── Cursor glow (page-wide, subtle blue) ── */
     #cursor-glow {
       position: fixed;
       top: 0; left: 0;
@@ -64,68 +64,184 @@
       will-change: transform;
     }
 
+    /* ── Hero spotlight (white reveal over background photo) ── */
+    #hero-spotlight {
+      position: fixed;
+      top: 0; left: 0;
+      width: 560px; height: 560px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.04) 45%, transparent 70%);
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+      z-index: 99;
+      will-change: transform;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #hero-spotlight.active { opacity: 1; }
+
     /* ── Header ── */
     header {
-      position: sticky;
-      top: 0;
+      position: fixed;
+      top: 0; left: 0; right: 0;
       z-index: 100;
       height: 62px;
-      background: rgba(255,255,255,0.82);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(221,229,239,0.65);
+      background: transparent;
+      border-bottom: 1px solid transparent;
       padding: 0 28px;
       display: flex;
       align-items: center;
       gap: 14px;
+      transition: background var(--t) var(--ease), border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
     }
-    .logo { font-size: 1.15rem; font-weight: 800; color: var(--primary); letter-spacing: -.65px; }
-    .logo span { color: var(--text-1); }
-    .tagline { font-size: .73rem; color: var(--text-3); border-left: 1px solid var(--border); padding-left: 14px; }
+    header.scrolled {
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(221,229,239,0.65);
+      box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+    }
+    .logo {
+      font-size: 1.15rem; font-weight: 800; letter-spacing: -.65px;
+      color: #fff;
+      transition: color var(--t) var(--ease);
+    }
+    .logo span { color: rgba(255,255,255,0.88); transition: color var(--t) var(--ease); }
+    header.scrolled .logo { color: var(--primary); }
+    header.scrolled .logo span { color: var(--text-1); }
     .header-region {
       margin-left: auto;
-      font-size: .71rem; color: var(--text-3);
+      font-size: .71rem;
       display: flex; align-items: center; gap: 7px;
-      background: var(--bg); padding: 5px 12px;
-      border-radius: 20px; border: 1px solid var(--border); font-weight: 500;
+      background: rgba(255,255,255,0.14); padding: 5px 12px;
+      border-radius: 20px; border: 1px solid rgba(255,255,255,0.24);
+      color: rgba(255,255,255,0.78); font-weight: 500;
+      transition: background var(--t) var(--ease), border-color var(--t) var(--ease), color var(--t) var(--ease);
     }
-    .region-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); flex-shrink: 0; }
+    header.scrolled .header-region {
+      background: var(--bg); border-color: var(--border); color: var(--text-3);
+    }
+    .region-dot { width: 6px; height: 6px; border-radius: 50%; background: #7ECFA5; flex-shrink: 0; }
 
     /* ── Hero ── */
     .hero {
       position: relative; overflow: hidden;
-      background: linear-gradient(-45deg, #1B3557, #1A4068, #163349, #1E4A6B);
-      background-size: 400% 400%;
-      animation: gradientDrift 24s ease infinite;
-      text-align: center; padding: 72px 24px 100px;
+      text-align: center;
+      min-height: 100vh;
+      padding: 62px 24px 62px;
+      display: flex; align-items: center; justify-content: center;
     }
-    .hero::after {
-      content: ''; position: absolute; inset: 0;
-      background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
-      background-size: 28px 28px; pointer-events: none;
+    .hero-bg {
+      position: absolute; inset: 0;
+      /*
+        To use your own licensed image instead, save it to
+        clearcare/frontend/static/hero-bg.jpg and replace the URL below with:
+        url('/static/hero-bg.jpg')
+      */
+      background:
+        url('/static/hero-bg.jpg') center 40%/cover no-repeat,
+        linear-gradient(160deg, #4a7a5a, #3a6a8c);
+      animation: kenBurns 28s ease-in-out infinite alternate;
+      transform-origin: center;
+      will-change: transform;
     }
-    @keyframes gradientDrift {
-      0%   { background-position: 0% 50%; }
-      50%  { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(10, 20, 15, 0.52) 0%,
+        rgba(10, 20, 15, 0.68) 50%,
+        rgba(10, 20, 15, 0.42) 80%,
+        transparent 100%
+      );
     }
-    .hero-inner { position: relative; z-index: 2; }
+    /* smooth fade from photo into page background */
+    .hero-fade {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 160px;
+      background: linear-gradient(to bottom, transparent 0%, #F3F6FB 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+    @keyframes kenBurns {
+      from { transform: scale(1.0) translate(0, 0); }
+      to   { transform: scale(1.08) translate(-1%, -1%); }
+    }
+    .hero-inner { position: relative; z-index: 2; width: 100%; max-width: 700px; }
     .hero-eyebrow {
       display: inline-flex; align-items: center; gap: 8px;
       background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.16);
       border-radius: 20px; padding: 5px 14px;
       font-size: .7rem; font-weight: 500; letter-spacing: .55px; text-transform: uppercase;
-      color: rgba(255,255,255,0.68); margin-bottom: 22px;
+      color: rgba(255,255,255,0.68); margin-bottom: 24px;
     }
     .hero-eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: #7ECFA5; flex-shrink: 0; }
     .hero h1 {
-      font-size: clamp(1.85rem, 4.5vw, 2.75rem); font-weight: 800;
-      line-height: 1.14; letter-spacing: -.55px; color: #fff; margin-bottom: 16px;
+      font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 800;
+      line-height: 1.12; letter-spacing: -.6px; color: #fff; margin-bottom: 18px;
     }
-    .hero p { font-size: .96rem; color: rgba(255,255,255,0.68); max-width: 460px; margin: 0 auto; line-height: 1.75; }
+    .hero-desc {
+      font-size: 1rem; color: rgba(255,255,255,0.72); max-width: 500px;
+      margin: 0 auto 32px; line-height: 1.78; font-weight: 400;
+    }
 
+    /* Feature bullets */
+    .hero-features {
+      display: flex; justify-content: center; gap: 10px;
+      flex-wrap: wrap; margin-bottom: 38px;
+    }
+    .hero-feature {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 20px; padding: 7px 14px;
+      font-size: .78rem; color: rgba(255,255,255,0.78); font-weight: 500;
+    }
+    .hero-feature-check {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: rgba(126,207,165,0.2); border: 1px solid rgba(126,207,165,0.55);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .58rem; color: #7ECFA5; flex-shrink: 0; line-height: 1;
+    }
+
+    /* CTA button */
+    .btn-hero-cta {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 15px 38px;
+      background: #fff; color: var(--primary);
+      border: none; border-radius: 50px;
+      font-size: 1rem; font-weight: 700; letter-spacing: .1px;
+      cursor: pointer; font-family: inherit;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      transition: all var(--t) var(--ease);
+    }
+    .btn-hero-cta:hover {
+      background: var(--primary); color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    }
+    .btn-hero-cta svg { transition: transform var(--t) var(--ease); }
+    .btn-hero-cta:hover svg { transform: translateX(3px); }
+
+    /* Scroll hint */
+    .scroll-hint {
+      position: absolute; bottom: 28px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      color: rgba(255,255,255,0.38); font-size: .65rem; letter-spacing: .8px;
+      text-transform: uppercase; font-weight: 500;
+      animation: hintBounce 2.2s ease-in-out infinite;
+      z-index: 2; cursor: pointer; user-select: none;
+    }
+    @keyframes hintBounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); opacity: .38; }
+      50%       { transform: translateX(-50%) translateY(7px); opacity: .65; }
+    }
+
+    /* ── Search section ── */
+    .search-section { padding-top: 0; }
     /* ── Search card ── */
-    .search-wrapper { max-width: 820px; margin: -56px auto 40px; padding: 0 16px; position: relative; z-index: 10; }
+    .search-wrapper { max-width: 820px; margin: 60px auto 40px; padding: 0 16px; position: relative; z-index: 10; }
     .search-card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: 32px 36px 36px; }
     .search-card-title { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .75px; color: var(--text-3); margin-bottom: 24px; }
 
@@ -333,24 +449,50 @@
 <body>
 
 <div id="cursor-glow" aria-hidden="true"></div>
+<div id="hero-spotlight" aria-hidden="true"></div>
 
 <!-- ── Header ── -->
-<header>
+<header id="site-header">
   <div class="logo">Clear<span>Care</span></div>
-  <div class="tagline">GoodRx for hospitals</div>
-  <div class="header-region"><span class="region-dot"></span>Philadelphia Metro</div>
 </header>
 
-<!-- ── Hero ── -->
-<div class="hero">
+<!-- ── Hero / Landing ── -->
+<div class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-fade"></div>
   <div class="hero-inner">
-    <div class="hero-eyebrow"><span class="hero-eyebrow-dot"></span>Philadelphia Metro Area</div>
     <h1>Know what you'll pay<br>before you walk in.</h1>
-    <p>Enter your procedure and insurance. We'll show you the real out-of-pocket cost at every hospital nearby — ranked cheapest first.</p>
+    <p class="hero-desc">Hospital prices for the same procedure can vary by thousands of dollars. ClearCare shows you the estimated out-of-pocket cost at hospitals near you — ranked from cheapest to most expensive, based on your insurance.</p>
+
+    <div class="hero-features">
+      <div class="hero-feature">
+        <span class="hero-feature-check">✓</span>
+        All major insurers supported
+      </div>
+      <div class="hero-feature">
+        <span class="hero-feature-check">✓</span>
+        Ranked cheapest to most expensive
+      </div>
+    </div>
+
+    <button class="btn-hero-cta" onclick="scrollToSearch()">
+      Get Started
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="scroll-hint" onclick="scrollToSearch()">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
   </div>
 </div>
 
-<!-- ── Search card ── -->
+<!-- ── Search section ── -->
+<div class="search-section" id="search">
 <div class="search-wrapper">
   <div class="search-card">
     <div class="search-card-title">Find Your Price</div>
@@ -428,6 +570,7 @@
     </div>
   </div>
 </div>
+</div><!-- /search-section -->
 
 <!-- ── Data availability notice ── -->
 <!-- TODO: Remove once Pete has loaded all target hospitals -->
@@ -449,13 +592,47 @@
 
 <script>
   /* ─────────────────────────────────────────────
-     Cursor glow
+     Cursor glow + hero spotlight
   ───────────────────────────────────────────── */
   (function () {
-    const glow = document.getElementById('cursor-glow');
+    const glow      = document.getElementById('cursor-glow');
+    const spotlight = document.getElementById('hero-spotlight');
+    const hero      = document.getElementById('hero');
+
     document.addEventListener('mousemove', e => {
-      glow.style.transform = `translate(${e.clientX - 320}px, ${e.clientY - 320}px)`;
+      glow.style.transform      = `translate(${e.clientX - 320}px, ${e.clientY - 320}px)`;
+      spotlight.style.transform = `translate(${e.clientX - 280}px, ${e.clientY - 280}px)`;
+
+      const r = hero.getBoundingClientRect();
+      const inHero = e.clientY >= r.top && e.clientY <= r.bottom
+                  && e.clientX >= r.left && e.clientX <= r.right;
+      spotlight.classList.toggle('active', inHero);
     });
+
+    document.addEventListener('mouseleave', () => {
+      spotlight.classList.remove('active');
+    });
+  })();
+
+  /* ─────────────────────────────────────────────
+     Scroll to search
+  ───────────────────────────────────────────── */
+  function scrollToSearch() {
+    document.getElementById('search').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* ─────────────────────────────────────────────
+     Header scroll — transparent over hero, solid after
+  ───────────────────────────────────────────── */
+  (function () {
+    const header = document.getElementById('site-header');
+    const hero   = document.querySelector('.hero');
+    function update() {
+      const threshold = (hero ? hero.offsetHeight : 400) - 20;
+      header.classList.toggle('scrolled', window.scrollY > threshold);
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    update();
   })();
 
   /* ─────────────────────────────────────────────
