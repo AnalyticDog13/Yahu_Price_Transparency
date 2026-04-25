@@ -43,12 +43,11 @@ Yahu_Price_Transparency/
 └── clearcare/
     │
     ├── backend/                        ← Pete's domain (data pipeline + API)
-    │   ├── parse_prices.py             full rebuild: all hospital CSVs → prices.csv + prices.db
+    │   ├── parse_prices.py             full rebuild: all hospital CSVs → prices.csv
     │   ├── add_hospital.py             incremental: add one hospital to prices.csv
     │   ├── app.py                      Flask API server (run this to start the backend)
     │   └── data/
-    │       ├── prices.csv              ✅ committed — the standardized data handoff file
-    │       └── prices.db               gitignored — auto-built from prices.csv on app start
+    │       └── prices.csv              ✅ committed — the standardized data handoff file
     │
     └── frontend/                       ← Will's domain (website UI)
         ├── index.html                  current working UI (starting reference)
@@ -114,7 +113,7 @@ To scale to all ~6,000 US hospitals:
 - **Scheduled rebuilds** — hospitals update their price files periodically (usually annually). Set up a cron job to re-download and re-parse on a schedule, keeping `prices.csv` current.
 - **Format coverage** — the current parser handles long-format CSV (majority), wide-format CSV (e.g. HUP), and XLSX. A JSON parser would cover the remaining ~15% of hospitals.
 - **Cloud storage** — at 6,000 hospitals, `prices.csv` grows to ~500 MB. Move to a hosted database (PostgreSQL on Supabase or similar) rather than a committed CSV file.
-- **API performance** — replace the SQLite query layer in `app.py` with indexed queries against the hosted DB. Add caching for common procedure+payer combinations.
+- **API performance** — replace the in-memory CSV scan in `app.py` with indexed queries against the hosted DB. Add caching for common procedure+payer combinations.
 - **Geographic filtering** — add `hospital_lat` / `hospital_lon` to the hospital registry and expose a `/api/prices?near=lat,lon&radius=25mi` parameter so the website can show only nearby hospitals.
 
 ---
@@ -133,7 +132,7 @@ cd clearcare/backend
 python3 app.py
 ```
 
-Open **http://localhost:5001**. The server auto-builds `prices.db` from `prices.csv` on first run.
+Open **http://localhost:5001**.
 
 ---
 
@@ -147,14 +146,14 @@ pip install -r requirements.txt
 
 `requirements.txt` installs: `flask` (web server) and `openpyxl` (XLSX parsing).
 
-**1. Build the database** (Pete's step — requires raw CSVs in `hospital-price-data/`)
+**1. Rebuild prices.csv** (requires raw CSVs in `hospital-price-data/`)
 
 ```bash
 cd clearcare/backend
 python3 parse_prices.py
 ```
 
-Scans all registered hospital CSVs, extracts imaging/diagnostic procedures by CPT code, and writes `prices.csv` + `prices.db`. Takes ~15 seconds per hospital.
+Scans all registered hospital CSVs, extracts imaging/diagnostic procedures by CPT code, and writes `prices.csv`. Takes ~15 seconds per hospital.
 
 **2. Start the API server**
 
@@ -163,7 +162,7 @@ cd clearcare/backend
 python3 app.py
 ```
 
-Open `http://localhost:5001`. If `prices.db` is missing, it auto-builds from `prices.csv`.
+Open `http://localhost:5001`.
 
 **Adding a new hospital (incremental — no full rebuild needed):**
 
@@ -249,7 +248,7 @@ The Flask backend (`clearcare/backend/app.py`) exposes four endpoints:
 | GET | `/api/procedures` | Returns all procedure categories and their CPT codes |
 | GET | `/api/payers?codes=70551,70552` | Returns all payers with data for the given CPT codes |
 | GET | `/api/prices?codes=...&payer=...&deductible_met=...&deductible_remaining=...&coinsurance=...` | Ranked results with estimated out-of-pocket per hospital |
-| GET | `/api/hospitals` | Returns all hospitals in the database |
+| GET | `/api/hospitals` | Returns all hospitals |
 
 ### Example API call
 
