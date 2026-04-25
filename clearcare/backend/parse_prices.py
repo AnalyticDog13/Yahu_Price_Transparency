@@ -87,13 +87,6 @@ PROCEDURE_CATEGORIES = {
 # (or use add_hospital.py to append a single hospital without a full rebuild)
 HOSPITAL_FILES = [
     {
-        "filename":         "510064326_St.-Francis-Hospital-Inc_standardcharges.csv",
-        "hospital_name":    "St. Francis Hospital",
-        "hospital_city":    "Wilmington",
-        "hospital_state":   "DE",
-        "hospital_address": "701 N. Clayton St",
-    },
-    {
         "filename":         "23-1529076_riddle-memorial-hospital_standardcharges.csv",
         "hospital_name":    "Riddle Memorial Hospital",
         "hospital_city":    "Media",
@@ -121,6 +114,13 @@ HOSPITAL_FILES = [
         "hospital_city":    "Paoli",
         "hospital_state":   "PA",
         "hospital_address": "255 West Lancaster Avenue",
+    },
+    {
+        "filename":         "231352191_Mercy-Fitzgerald-Hospital_standardcharges.csv",
+        "hospital_name":    "Mercy Fitzgerald Hospital",
+        "hospital_city":    "Darby",
+        "hospital_state":   "PA",
+        "hospital_address": "1500 Lansdowne Avenue",
     },
 ]
 

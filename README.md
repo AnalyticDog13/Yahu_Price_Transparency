@@ -53,15 +53,17 @@ Yahu_Price_Transparency/
 
 ## Current Data Coverage
 
+All hospitals are in the **Philadelphia metro area (PA)**.
+
 | Hospital | City | State | Rows in prices.csv |
 |---|---|---|---|
-| St. Francis Hospital | Wilmington | DE | 4,795 |
 | Riddle Memorial Hospital | Media | PA | 668 |
 | Jefferson Methodist Hospital | Philadelphia | PA | 16,038 |
 | Bryn Mawr Hospital | Bryn Mawr | PA | 668 |
 | Paoli Hospital | Paoli | PA | 668 |
+| Mercy Fitzgerald Hospital | Darby | PA | 6,947 |
 
-**Total: 22,837 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
+**Total: 24,989 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
 
 ---
 
