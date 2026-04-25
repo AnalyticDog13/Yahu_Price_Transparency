@@ -63,28 +63,13 @@ All hospitals are in the **Philadelphia metro area (PA)**.
 | Paoli Hospital | Paoli | PA | 668 |
 | Mercy Fitzgerald Hospital | Darby | PA | 6,947 |
 | Temple University Hospital | Philadelphia | PA | 1,769 |
+| Hospital of the University of Pennsylvania | Philadelphia | PA | 5,450 |
 
-**Total: 26,758 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
+**Total: 32,208 rows** across 13 procedure categories and ~100+ insurance payers per hospital.
 
 ---
 
 ## To-Do List
-
-### Backend (Pete)
-
-- [ ] **Add more Philadelphia-area hospitals** — need 5+ more for a compelling demo showing real price variation across a metro area. Priority targets:
-  - Hospital of the University of Pennsylvania (HUP)
-  - Pennsylvania Hospital
-  - Lankenau Medical Center
-  - Chester County Hospital
-  - Crozer Health (Crozer-Chester Medical Center)
-  - Christiana Hospital (Newark, DE)
-  - Nemours/AI DuPont (Wilmington, DE)
-- [ ] **Add `requirements.txt`** — currently only `flask` is needed (`pip install flask`)
-- [ ] **Handle wide-format CSVs** — some hospitals publish payers as columns instead of rows; needs a separate parser branch in `add_hospital.py`
-- [ ] **Handle JSON-format price files** — ~15% of hospitals publish JSON instead of CSV
-- [ ] **Add hospital lat/lon** to the `HOSPITAL_FILES` registry in `parse_prices.py` for future map filtering
-- [ ] **Add a geographic filter to the API** — `GET /api/prices` should support filtering by metro area or state once more hospitals are loaded
 
 ### Frontend (Will)
 
@@ -99,9 +84,46 @@ All hospitals are in the **Philadelphia metro area (PA)**.
 
 ---
 
+## Post-Pilot: Scaling to Other Regions and Nationwide
+
+The Philadelphia pilot proves feasibility. Scaling to more regions and eventually nationwide is straightforward because the data pipeline is already generalized — adding a new metro area is just downloading files and running `add_hospital.py`.
+
+### Phase 2 — Expand to Additional Metro Areas
+
+Each metro area follows the same playbook: identify 5–10 hospitals, download their CMS-mandated price files, run `add_hospital.py` for each. Suggested next regions:
+
+| Metro Area | Why |
+|---|---|
+| New York City | Largest market, extreme price variation documented across boroughs |
+| Houston | Large uninsured population, high concentration of major health systems |
+| Chicago | Strong BCBS/Aetna/UHC market share, good for insurer comparison data |
+| Los Angeles | Large Medicaid population, multiple competing health systems |
+| Boston | High-cost market, academic medical centers vs community hospitals |
+
+**Estimated effort per new metro:** 2–4 hours to download files and run the parser. No code changes required unless a hospital uses an unsupported file format.
+
+### Phase 3 — Nationwide Coverage
+
+To scale to all ~6,000 US hospitals:
+
+- **Automate file discovery** — CMS publishes a machine-readable index of all hospital price transparency files at `https://www.cms.gov/hospital-price-transparency`. Build a scraper that pulls the file list, downloads new/updated files, and queues them for parsing.
+- **Scheduled rebuilds** — hospitals update their price files periodically (usually annually). Set up a cron job to re-download and re-parse on a schedule, keeping `prices.csv` current.
+- **Format coverage** — the current parser handles long-format CSV (majority), wide-format CSV (e.g. HUP), and XLSX. A JSON parser would cover the remaining ~15% of hospitals.
+- **Cloud storage** — at 6,000 hospitals, `prices.csv` grows to ~500 MB. Move to a hosted database (PostgreSQL on Supabase or similar) rather than a committed CSV file.
+- **API performance** — replace the SQLite query layer in `app.py` with indexed queries against the hosted DB. Add caching for common procedure+payer combinations.
+- **Geographic filtering** — add `hospital_lat` / `hospital_lon` to the hospital registry and expose a `/api/prices?near=lat,lon&radius=25mi` parameter so the website can show only nearby hospitals.
+
+---
+
 ## How to Run
 
-**Prerequisites:** Python 3.10+, `pip install flask`
+**Prerequisites:** Python 3.10+
+
+```bash
+pip install -r requirements.txt
+```
+
+`requirements.txt` installs: `flask` (web server) and `openpyxl` (XLSX parsing).
 
 **1. Build the database** (Pete's step — requires raw CSVs in `hospital-price-data/`)
 

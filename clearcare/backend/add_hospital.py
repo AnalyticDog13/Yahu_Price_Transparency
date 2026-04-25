@@ -57,11 +57,15 @@ def save_csv(rows: list[dict]):
 
 def main():
     parser = argparse.ArgumentParser(description="Add one hospital to prices.csv")
-    parser.add_argument("--file",    required=True, help="CSV filename inside hospital-price-data/")
+    parser.add_argument("--file",    required=True, help="CSV/XLSX filename inside hospital-price-data/")
     parser.add_argument("--name",    required=True, help='Display name, e.g. "Jefferson Methodist Hospital"')
     parser.add_argument("--city",    required=True, help='City, e.g. "Philadelphia"')
     parser.add_argument("--state",   required=True, help='State abbreviation, e.g. "PA"')
     parser.add_argument("--address", required=True, help='Street address, e.g. "2301 S Broad Street"')
+    parser.add_argument("--format",  default="long", choices=["long", "wide"],
+                        help='File format: "long" (one row per payer, default) or "wide" (payers as columns, e.g. HUP)')
+    parser.add_argument("--xlsx-sheet", default=None,
+                        help='Sheet name for .xlsx files (defaults to first sheet)')
     args = parser.parse_args()
 
     hospital = {
@@ -70,7 +74,10 @@ def main():
         "hospital_city":    args.city,
         "hospital_state":   args.state,
         "hospital_address": args.address,
+        "format":           args.format,
     }
+    if args.xlsx_sheet:
+        hospital["xlsx_sheet"] = args.xlsx_sheet
 
     # Parse the new hospital
     new_rows = parse_hospital_csv(hospital)

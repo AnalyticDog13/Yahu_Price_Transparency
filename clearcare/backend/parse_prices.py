@@ -129,6 +129,14 @@ HOSPITAL_FILES = [
         "hospital_state":   "PA",
         "hospital_address": "3401 N Broad St",
     },
+    {
+        "filename":         "231352685_the-trustees-of-the-university-of-pennsylvania-dba-the-hospital-of-the-univer_standardcharges.csv",
+        "hospital_name":    "Hospital of the University of Pennsylvania",
+        "hospital_city":    "Philadelphia",
+        "hospital_state":   "PA",
+        "hospital_address": "3400 Spruce St",
+        "format":           "wide",
+    },
 ]
 
 CSV_COLUMNS = [
@@ -146,6 +154,79 @@ def safe_float(val):
         return f if f > 0 else None
     except (ValueError, TypeError):
         return None
+
+
+def _parse_wide_payer_columns(fieldnames: list[str]) -> list[tuple[str, str, str]]:
+    """
+    From a wide-format header, extract (column_name, payer, plan) tuples
+    for every negotiated_dollar column.
+    Column pattern: standard_charge|{payer}|{plan}|negotiated_dollar
+    """
+    result = []
+    for col in fieldnames:
+        parts = col.split("|")
+        if len(parts) == 4 and parts[0] == "standard_charge" and parts[3] == "negotiated_dollar":
+            result.append((col, parts[1].strip(), parts[2].strip()))
+    return result
+
+
+def _parse_wide_csv(hospital: dict, path: str) -> list[dict]:
+    """
+    Parse a wide-format CMS CSV where each payer is a set of columns.
+    Pivots to long format: one output row per (procedure, payer) pair.
+    """
+    rows = []
+    with open(path, encoding="utf-8-sig", errors="replace") as f:
+        next(f)  # metadata header
+        next(f)  # metadata values
+        reader = csv.DictReader(f)
+
+        payer_cols = _parse_wide_payer_columns(reader.fieldnames)
+
+        for i, row in enumerate(reader):
+            # Find matching CPT code
+            cpt_code = None
+            for slot in range(1, 6):
+                code  = str(row.get(f"code|{slot}") or "").strip()
+                ctype = str(row.get(f"code|{slot}|type") or "").strip().upper()
+                if ctype in ("CPT", "HCPCS") and code in PROCEDURE_CODES:
+                    cpt_code = code
+                    break
+
+            if not cpt_code:
+                continue
+
+            cash  = safe_float(row.get("standard_charge|discounted_cash"))
+            gross = safe_float(row.get("standard_charge|gross"))
+
+            # Emit one row per payer that has a dollar value
+            for col, payer, plan in payer_cols:
+                negotiated = safe_float(row.get(col))
+                if negotiated is None:
+                    continue
+
+                payer_norm = re.sub(r"\s+", " ", payer.upper())
+                rows.append({
+                    "hospital_name":      hospital["hospital_name"],
+                    "hospital_city":      hospital["hospital_city"],
+                    "hospital_state":     hospital["hospital_state"],
+                    "hospital_address":   hospital["hospital_address"],
+                    "procedure_category": PROCEDURE_CATEGORIES[cpt_code],
+                    "procedure_name":     PROCEDURE_CODES[cpt_code],
+                    "cpt_code":           cpt_code,
+                    "payer":              payer_norm,
+                    "plan":               plan,
+                    "negotiated_dollar":  negotiated,
+                    "discounted_cash":    cash,
+                    "gross_charge":       gross,
+                    "setting":            str(row.get("setting") or "").strip().lower(),
+                    "billing_class":      str(row.get("billing_class") or "").strip().lower(),
+                })
+
+            if i % 100_000 == 0 and i > 0:
+                print(f"    … {i:,} rows scanned ({len(rows):,} matches)")
+
+    return rows
 
 
 def _process_row(hospital: dict, row: dict) -> dict | None:
@@ -205,12 +286,16 @@ def parse_hospital_csv(hospital: dict) -> list[dict]:
         print(f"  SKIPPED (file not found): {hospital['filename']}")
         return []
 
+    fmt = hospital.get("format", "long")
     ext = os.path.splitext(hospital["filename"])[1].lower()
     rows = []
     t0 = time.time()
-    print(f"  Parsing {hospital['hospital_name']} ({ext}) …")
+    print(f"  Parsing {hospital['hospital_name']} ({ext}, {fmt}-format) …")
 
-    if ext == ".xlsx":
+    if fmt == "wide":
+        rows = _parse_wide_csv(hospital, path)
+
+    elif ext == ".xlsx":
         if not XLSX_AVAILABLE:
             print("  SKIPPED — openpyxl not installed. Run: pip install openpyxl")
             return []
