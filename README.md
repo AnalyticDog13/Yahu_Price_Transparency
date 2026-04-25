@@ -1,4 +1,4 @@
-# ClearCare — Hospital Price Transparency Platform
+# Brahva — Hospital Price Transparency Platform
 
 ---
 
@@ -12,9 +12,9 @@ This hits hardest for the uninsured, underinsured, and anyone with a high-deduct
 
 ## The Solution
 
-**ClearCare** aggregates publicly available hospital pricing data and pairs it with a user's specific insurance information to show exactly what they would pay — before they walk in the door.
+**Brahva** aggregates publicly available hospital pricing data and pairs it with a user's specific insurance information to show exactly what they would pay — before they walk in the door.
 
-A user enters their procedure and insurance provider. ClearCare returns a ranked list of nearby hospitals showing their estimated out-of-pocket cost at each one. Same care, lowest price, no surprises.
+A user enters their procedure and insurance provider. Brahva returns a ranked list of nearby hospitals showing their estimated out-of-pocket cost at each one. Same care, lowest price, no surprises.
 
 ### Current Scope — Philadelphia & Westchester Pilot
 
@@ -23,6 +23,18 @@ This pilot covers **12 hospitals across two metro regions**: Philadelphia, PA an
 The website automatically detects your region from your ZIP code and shows only the relevant hospitals. Philadelphia-area ZIPs (19xxx) show PA hospitals; Westchester-area ZIPs (105xx–109xx) show NY hospitals.
 
 The architecture is built to scale: adding new regions only requires downloading CMS price files, checking the file structure and condensing it into a standardized data set, and running `add_hospital.py`. There is no code change required to expand coverage. See [Post-Pilot: Scaling](#post-pilot-scaling-to-other-regions-and-nationwide) for the roadmap.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Backend** | Python 3.10+, Flask 3.x |
+| **Data pipeline** | Python (csv, json, openpyxl) — parses CMS hospital price files in CSV, wide-format CSV, XLSX, and JSON |
+| **Database** | SQLite (auto-built from `prices.csv` at startup); flat CSV as the committed data artifact |
+| **Frontend** | Vanilla HTML, CSS, JavaScript — no frameworks or build step required |
+| **Data source** | CMS Hospital Price Transparency files (45 CFR 180.50) |
 
 ---
 
@@ -35,22 +47,22 @@ Yahu_Price_Transparency/
 ├── .gitignore
 │
 ├── hospital-price-data/                ← raw CSVs (gitignored — up to 1.3 GB each)
-│   ├── 510064326_St.-Francis-Hospital-Inc_standardcharges.csv
-│   ├── 23-1529076_riddle-memorial-hospital_standardcharges.csv
-│   └── 232829095_jefferson-methodist-hospital_standardcharges.csv
 │
 └── clearcare/
     │
     ├── backend/                        (data pipeline + API)
-    │   ├── parse_prices.py             hospital CSVs → prices.csv
-    │   ├── add_hospital.py             adds one hospital to prices.csv
-    │   ├── app.py                      Flask API server (run this to start the backend)
+    │   ├── parse_prices.py             hospital CSVs → prices.csv (full rebuild)
+    │   ├── add_hospital.py             adds one hospital to prices.csv (incremental)
+    │   ├── app.py                      Flask API server (run this to start the app)
     │   └── data/
-    │       └── prices.csv              standardized price file for easy readability
+    │       └── prices.csv              standardized price file — committed to repo
     │
     └── frontend/                       (website UI)
-        ├── index.html                  current working UI
-        └── static/                     CSS, JS, images
+        ├── index.html                  main search and results page
+        ├── signin.html
+        ├── signup.html
+        ├── support.html
+        └── static/                     images, assets
 ```
 
 ---
@@ -85,7 +97,7 @@ Yahu_Price_Transparency/
 
 ## Post-Pilot: Scaling to Other Regions and Nationwide
 
-The Philadelphia pilot proves feasibility. Scaling to more regions and eventually nationwide is straightforward because the data pipeline is already generalized — adding a new metro area is just downloading files and running `add_hospital.py`.
+The two-region pilot proves feasibility. Scaling to more regions and eventually nationwide is straightforward because the data pipeline is already generalized — adding a new metro area is just downloading files and running `add_hospital.py`.
 
 ### Phase 2 — Nationwide Coverage
 
@@ -154,7 +166,7 @@ python3 add_hospital.py \
   --file   "filename_standardcharges.csv" \
   --name   "Hospital Display Name" \
   --city   "City" \
-  --state  "PA" \
+  --state  "NY" \
   --address "123 Main St"
 ```
 
@@ -164,14 +176,14 @@ Safe to re-run — replaces existing rows for that hospital rather than duplicat
 
 ## Data Schema (`prices.csv`)
 
-This is the contract between the backend and the frontend. One row = one price for one procedure at one hospital under one insurance plan.
+One row = one price for one procedure at one hospital under one insurance plan.
 
 | Column | Type | Example | Description |
 |---|---|---|---|
-| `hospital_name` | text | `"St. Francis Hospital"` | Display name |
-| `hospital_city` | text | `"Wilmington"` | |
-| `hospital_state` | text | `"DE"` | |
-| `hospital_address` | text | `"701 N. Clayton St"` | |
+| `hospital_name` | text | `"White Plains Hospital"` | Display name |
+| `hospital_city` | text | `"White Plains"` | |
+| `hospital_state` | text | `"NY"` | |
+| `hospital_address` | text | `"41 East Post Road"` | |
 | `procedure_category` | text | `"MRI Brain"` | UI dropdown group |
 | `procedure_name` | text | `"MRI Brain (w/o contrast)"` | Specific variant |
 | `cpt_code` | text | `"70551"` | CPT/HCPCS billing code |
@@ -205,8 +217,6 @@ This is the contract between the backend and the frontend. One row = one price f
 
 ## API Endpoints
 
-The Flask backend (`clearcare/backend/app.py`) exposes four endpoints:
-
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/` | Serves the frontend UI |
@@ -218,16 +228,16 @@ The Flask backend (`clearcare/backend/app.py`) exposes four endpoints:
 ### Example API call
 
 ```
-GET /api/prices?codes=70551,70552,70553&payer=AETNA&deductible_met=no&deductible_remaining=1500&coinsurance=20
+GET /api/prices?codes=70551,70552,70553&payer=AETNA&deductible_met=no&deductible_remaining=1500&coinsurance=20&state=PA
 ```
 
-Returns hospitals sorted by estimated out-of-pocket, cheapest first.
+Returns Philadelphia-area hospitals sorted by estimated out-of-pocket, cheapest first.
 
 ---
 
 ## Why This Is Possible
 
-Since 2021, the **Hospital Price Transparency Rule (45 CFR 180.50)** requires every US hospital to publicly publish their negotiated rates with each insurer for every procedure. This data exists — it's just buried in multi-million-row spreadsheets with inconsistent formatting that no patient can use. ClearCare cleans it, normalizes it, and makes it queryable.
+Since 2021, the **Hospital Price Transparency Rule (45 CFR 180.50)** requires every US hospital to publicly publish their negotiated rates with each insurer for every procedure. This data exists — it's just buried in multi-million-row spreadsheets with inconsistent formatting that no patient can use. Brahva cleans it, normalizes it, and makes it queryable.
 
 ---
 
@@ -237,8 +247,8 @@ Since 2021, the **Hospital Price Transparency Rule (45 CFR 180.50)** requires ev
 - **Uninsured patients** — can see the cash-pay rate and use it as a negotiation baseline
 - **Low-income patients** — for whom a $400 vs $2,000 MRI is the difference between getting care and avoiding it
 
-Healthcare price opacity is a regressive tax. ClearCare closes the information gap.
+Healthcare price opacity is a regressive tax. Brahva closes the information gap.
 
 ---
 
-*Built for Cornell Claude Hackathon · Team Yahoo · April 2026*
+*Built for Cornell Claude Hackathon · Team Yahu · April 2026*
