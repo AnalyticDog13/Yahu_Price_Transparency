@@ -83,19 +83,6 @@ Yahu_Price_Transparency/
 
 ---
 
-## To-Do List
-
-### Frontend (Will)
-
-- [ ] **Remove deductible input** — the deductible fields don't meaningfully affect results at this stage; simplify the form to just procedure + insurance provider
-- [ ] **Filter low-data payers from dropdown** — remove insurance providers that appear at only 1–2 hospitals; they produce near-empty results and confuse users
-- [ ] **Searchable procedure dropdown** — replace the category/code picker with a typeahead so users can type "knee MRI" and get instant matches
-- [ ] **Searchable insurance dropdown** — replace the flat payer list with a searchable typeahead; there are 250+ options and a plain dropdown is unusable
-- [ ] **Polish the UI** — make the website look good; clean layout, consistent typography, clear visual hierarchy on the results cards
-- [ ] **Pilot scope notice** — display a clear banner or note explaining this is a Philadelphia-area pilot covering common diagnostic procedures (MRI, CT, X-ray, ultrasound, CBC); not all insurers or procedures are available
-
----
-
 ## Post-Pilot: Scaling to Other Regions and Nationwide
 
 The Philadelphia pilot proves feasibility. Scaling to more regions and eventually nationwide is straightforward because the data pipeline is already generalized — adding a new metro area is just downloading files and running `add_hospital.py`.
