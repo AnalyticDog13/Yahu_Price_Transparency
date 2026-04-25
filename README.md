@@ -17,10 +17,10 @@ This hits hardest for the uninsured, underinsured, and anyone with a high-deduct
 
 A user enters:
 - Their procedure (MRI, CT scan, ultrasound, blood panel, etc.)
-- Their location
-- Their insurance provider, plan, and whether they've hit their deductible
+- Their insurance provider and plan
+- Whether they've hit their deductible and their coinsurance rate
 
-ClearCare returns a ranked list of nearby hospitals showing their estimated out-of-pocket cost at each one, based on what people with the same insurance actually paid. Same care, lowest price, no surprises.
+ClearCare returns a ranked list of nearby hospitals showing their estimated out-of-pocket cost at each one. Same care, lowest price, no surprises.
 
 ---
 
@@ -32,96 +32,204 @@ We clean it, structure it, and make it useful.
 
 ---
 
-## Why Simple Procedures First
-
-We focus on **standardized diagnostic procedures** — MRIs, CT scans, ultrasounds, X-rays, and common lab tests — for three reasons:
-
-1. **They are commodity services.** An MRI is an MRI. Unlike surgery, quality does not meaningfully vary between facilities for diagnostic imaging. Price is the only differentiating factor.
-2. **They are elective and plannable.** Patients have time to shop around before booking a scan. This is not an emergency room situation.
-3. **The price variation is enormous and unjustifiable.** A chest CT scan in New York City ranges from $500 to $8,000 across hospitals in the same borough. That spread exists purely because of opacity, not quality.
-
----
-
-## How It Works
+## Repository Structure
 
 ```
-1. Data collection
-   └── Pull publicly mandated hospital price files
-       └── Clean, normalize, and structure by procedure + insurer
-
-2. User input
-   └── Procedure type → Location → Insurance provider + plan → Deductible status
-
-3. Price estimation
-   └── Match user's insurer to published negotiated rates at nearby hospitals
-       └── Apply deductible logic (have they hit it? coinsurance rate?)
-           └── Output: estimated true out-of-pocket cost per hospital
-
-4. Ranked results
-   └── Cheapest to most expensive, same region, same procedure, same insurance
+Yahu_Price_Transparency/
+├── README.md
+├── .gitignore
+├── hospital-price-data/          # Raw CSVs from hospital price transparency files
+│   │                             # (gitignored — too large to commit, up to 1.3 GB each)
+│   ├── 510064326_St.-Francis-Hospital-Inc_standardcharges.csv
+│   └── 23-1529076_riddle-memorial-hospital_standardcharges.csv
+│
+└── clearcare/                    # Application code
+    ├── parse_prices.py           # Data pipeline: raw CSVs → SQLite database
+    ├── app.py                    # Flask web server + API
+    ├── templates/
+    │   └── index.html            # Single-page frontend UI
+    └── static/
+        └── data/
+            └── prices.db         # Generated SQLite database (gitignored)
 ```
 
 ---
 
-## Scope for This Competition
+## How to Run
 
-We are building this small-scale to prove feasibility:
+**1. Add hospital CSV files**
 
-| Scope | Detail |
-|-------|--------|
-| Region | One metro area (e.g. New York City or Houston) |
-| Hospitals | 10–15 hospitals with published price files |
-| Procedures | 5 standardized procedures (MRI, CT scan, ultrasound, X-ray, CBC blood panel) |
-| Insurers | 3–4 major insurers (Aetna, UnitedHealth, BCBS, Cigna) |
+Download hospital price transparency files and place them in `hospital-price-data/`. Then register each one in the `hospital_files` dict at the bottom of `parse_prices.py`.
 
-This is enough to demonstrate real price variation, real out-of-pocket estimation, and a working end-to-end product. The data pipeline scales directly to any metro area in the US without any structural changes.
+**2. Build the database**
+
+```bash
+cd clearcare
+python3 parse_prices.py
+```
+
+This reads all registered hospital CSVs, extracts imaging/diagnostic procedures, and writes `clearcare/static/data/prices.db`. Takes ~15 seconds per hospital file.
+
+**3. Start the web server**
+
+```bash
+python3 app.py
+```
+
+Open `http://localhost:5001` in your browser.
+
+---
+
+## Data Pipeline (`parse_prices.py`)
+
+Reads raw hospital price transparency CSVs (CMS standard format, schema v3.x) and produces a normalized SQLite database. For each hospital file it:
+
+1. Skips the two-row hospital metadata header
+2. Scans all rows for matching CPT/HCPCS codes from the target procedure list
+3. Normalizes payer names to uppercase for consistent cross-hospital matching
+4. Writes all matched rows to `prices.db`
+
+**Supported source format:** CMS v3.x long-format CSV (one row per payer per procedure). This covers the majority of hospitals. Wide-format and JSON files require a separate parser.
+
+**Procedures extracted (by CPT code):**
+
+| Category | CPT Codes |
+|---|---|
+| MRI Brain | 70551, 70552, 70553 |
+| MRI Spine (Cervical) | 72141, 72142, 72156 |
+| MRI Spine (Thoracic) | 72146, 72147, 72157 |
+| MRI Spine (Lumbar) | 72148, 72149, 72158 |
+| MRI Knee / Joint | 73721, 73722, 73723 |
+| MRI Abdomen | 74181, 74182, 74183 |
+| CT Head / Brain | 70450, 70460, 70470 |
+| CT Chest | 71250, 71260, 71270 |
+| CT Abdomen & Pelvis | 74176, 74177, 74178 |
+| Ultrasound Abdomen | 76700, 76705 |
+| Ultrasound Pelvis | 76856, 76857 |
+| Chest X-Ray | 71045, 71046 |
+| CBC Blood Panel | 85025, 85027 |
+
+---
+
+## Database Schema (`prices.db`)
+
+The pipeline produces a single SQLite file with one primary table. This is the contract between the data pipeline and the website — the website only needs to know this schema.
+
+### `prices` table
+
+One row = one price for one procedure at one hospital under one insurance plan.
+
+| Column | Type | Description |
+|---|---|---|
+| `hospital_name` | TEXT | Display name, e.g. `"St. Francis Hospital"` |
+| `hospital_city` | TEXT | e.g. `"Wilmington"` |
+| `hospital_state` | TEXT | e.g. `"DE"` |
+| `hospital_address` | TEXT | Street address |
+| `procedure_category` | TEXT | Canonical group shown in UI dropdown, e.g. `"MRI Brain"` |
+| `procedure_name` | TEXT | Specific variant, e.g. `"MRI Brain (w/o contrast)"` |
+| `cpt_code` | TEXT | Standard CPT/HCPCS code, e.g. `"70551"` |
+| `payer` | TEXT | Insurance company, always uppercase, e.g. `"AETNA"` |
+| `plan` | TEXT | Specific plan within payer, e.g. `"AETNA HMO"` — may be blank |
+| `negotiated_dollar` | REAL | **Key field.** The rate the insurer has contracted with the hospital. This is what the insurer + patient together owe. |
+| `discounted_cash` | REAL | Self-pay / uninsured price |
+| `gross_charge` | REAL | Hospital sticker price (rarely what anyone pays) |
+| `setting` | TEXT | `"outpatient"`, `"inpatient"`, or `"both"` |
+| `billing_class` | TEXT | `"facility"` or `"professional"` |
+
+### `procedure_categories` table
+
+Maps UI dropdown categories to their constituent CPT codes.
+
+| Column | Type | Description |
+|---|---|---|
+| `category` | TEXT | e.g. `"MRI Brain"` |
+| `cpt_code` | TEXT | e.g. `"70551"` |
+
+### Example queries
+
+```sql
+-- All insurers that have data for MRI Brain at any hospital
+SELECT DISTINCT payer FROM prices WHERE procedure_category = 'MRI Brain' ORDER BY payer;
+
+-- Cheapest hospital for MRI Brain under AETNA
+SELECT hospital_name, negotiated_dollar, discounted_cash
+FROM prices
+WHERE procedure_category = 'MRI Brain' AND payer = 'AETNA'
+ORDER BY negotiated_dollar ASC;
+
+-- All procedures available at a specific hospital
+SELECT DISTINCT procedure_category FROM prices WHERE hospital_name = 'St. Francis Hospital';
+```
+
+---
+
+## Out-of-Pocket Estimation Logic
+
+The website computes estimated patient cost from `negotiated_dollar` plus user-supplied insurance details:
+
+```
+# Deductible fully met:
+patient_owes = negotiated_dollar × coinsurance_pct
+
+# Deductible not yet met:
+patient_owes = min(deductible_remaining, negotiated_dollar)
+             + max(0, negotiated_dollar - deductible_remaining) × coinsurance_pct
+```
+
+Where `coinsurance_pct` is the patient's share after deductible (default 20% = 0.20).
+
+The three prices shown per hospital on the results page:
+- **Your estimated cost** — computed above
+- **Negotiated rate** — `negotiated_dollar` (what insurer + patient pay together)
+- **Self-pay price** — `discounted_cash` (shown as the uninsured option)
+
+---
+
+## Web App (`app.py`)
+
+Flask server with four API endpoints:
+
+| Endpoint | Description |
+|---|---|
+| `GET /` | Serves the main UI |
+| `GET /api/procedures` | Returns all procedure categories and their CPT codes |
+| `GET /api/payers?codes=70551,70552` | Returns all payers with data for given CPT codes |
+| `GET /api/prices?codes=...&payer=...&deductible_met=...&deductible_remaining=...&coinsurance=...` | Returns ranked hospital results with estimated out-of-pocket |
+
+---
+
+## Adding a New Hospital
+
+1. Download the hospital's price transparency CSV
+2. Place it in `hospital-price-data/`
+3. Add an entry to the `hospital_files` dict in `parse_prices.py`:
+   ```python
+   "Hospital Display Name (City, ST)": "filename_standardcharges.csv",
+   ```
+4. Re-run `python3 parse_prices.py` — the DB is fully rebuilt each run
+
+> **Note:** The parser handles CMS v3.x long-format CSVs. If a hospital publishes a wide-format file (payers as columns) or a JSON file, a separate parser function will need to be added.
+
+---
+
+## Scope (Pilot)
+
+| | Detail |
+|---|---|
+| Hospitals | 5–10, manually onboarded |
+| Procedures | 13 categories covering MRI, CT, ultrasound, X-ray, CBC |
+| Insurers | All payers published in the hospital files (~100+ per hospital) |
+| Format | CMS v3.x long-format CSV |
 
 ---
 
 ## Social Impact
 
-This directly benefits:
 - **High-deductible plan holders** — the fastest growing insurance segment, who pay out of pocket for most routine care
 - **Uninsured patients** — who can see the cash-pay rate and use it as a negotiation baseline
 - **Low-income patients** — for whom a $400 vs $2,000 MRI is the difference between getting care and avoiding it
 
 Healthcare price opacity is a regressive tax — it falls hardest on people with the least information and the least bargaining power. ClearCare closes that information gap.
-
----
-
-## Differentiation from GoodRx
-
-| | GoodRx | ClearCare |
-|--|--------|-----------|
-| Focus | Pharmaceuticals | Hospital procedures |
-| Data source | Pharmacy PBM data | Public hospital price files |
-| Insurance-aware | Partially | Fully — estimates true out-of-pocket |
-| Procedure types | Drugs | Imaging, diagnostics |
-| Market | Saturated | Wide open |
-
-GoodRx proved the model works and commands a $4B+ valuation doing it for drugs. Hospital procedures are a larger, less addressed market with the same core problem.
-
----
-
-## Build Plan
-
-```
-Day 1 — Morning
-└── Pull and clean price transparency files for target hospitals
-└── Build normalization pipeline (procedure codes → readable names)
-
-Day 1 — Midday
-└── Build insurance + deductible logic layer
-└── Match user insurer to published negotiated rates
-
-Day 1 — Afternoon
-└── Build search UI (procedure + location + insurance inputs)
-└── Ranked results output with price estimates
-
-Day 1 — Evening
-└── Polish demo with real price data showing variation
-└── Prepare pitch narrative
-```
 
 ---
 
