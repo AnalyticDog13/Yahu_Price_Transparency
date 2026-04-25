@@ -17,6 +17,12 @@ import re
 import sqlite3
 import time
 
+try:
+    import openpyxl
+    XLSX_AVAILABLE = True
+except ImportError:
+    XLSX_AVAILABLE = False
+
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "hospital-price-data")
 OUT_CSV  = os.path.join(os.path.dirname(__file__), "data", "prices.csv")
 OUT_DB   = os.path.join(os.path.dirname(__file__), "data", "prices.db")
@@ -101,6 +107,14 @@ HOSPITAL_FILES = [
         "hospital_state":   "PA",
         "hospital_address": "2301 S Broad Street",
     },
+    {
+        "filename":         "231352160_the-bryn-mawr-hospital_standardcharges.xlsx",
+        "hospital_name":    "Bryn Mawr Hospital",
+        "hospital_city":    "Bryn Mawr",
+        "hospital_state":   "PA",
+        "hospital_address": "130 South Bryn Mawr Ave",
+        "xlsx_sheet":       "in",
+    },
 ]
 
 CSV_COLUMNS = [
@@ -120,70 +134,105 @@ def safe_float(val):
         return None
 
 
+def _process_row(hospital: dict, row: dict) -> dict | None:
+    """
+    Shared row-processing logic for both CSV and XLSX parsers.
+    Returns a normalized dict or None if the row should be skipped.
+    """
+    cpt_code = None
+    for slot in range(1, 6):
+        code  = str(row.get(f"code|{slot}") or "").strip()
+        ctype = str(row.get(f"code|{slot}|type") or "").strip().upper()
+        if ctype in ("CPT", "HCPCS") and code in PROCEDURE_CODES:
+            cpt_code = code
+            break
+
+    if not cpt_code:
+        return None
+
+    negotiated = safe_float(row.get("standard_charge|negotiated_dollar"))
+    cash       = safe_float(row.get("standard_charge|discounted_cash"))
+    gross      = safe_float(row.get("standard_charge|gross"))
+
+    if negotiated is None and cash is None:
+        return None
+
+    payer = re.sub(r"\s+", " ", str(row.get("payer_name") or "").strip().upper())
+
+    return {
+        "hospital_name":      hospital["hospital_name"],
+        "hospital_city":      hospital["hospital_city"],
+        "hospital_state":     hospital["hospital_state"],
+        "hospital_address":   hospital["hospital_address"],
+        "procedure_category": PROCEDURE_CATEGORIES[cpt_code],
+        "procedure_name":     PROCEDURE_CODES[cpt_code],
+        "cpt_code":           cpt_code,
+        "payer":              payer,
+        "plan":               str(row.get("plan_name") or "").strip(),
+        "negotiated_dollar":  negotiated,
+        "discounted_cash":    cash,
+        "gross_charge":       gross,
+        "setting":            str(row.get("setting") or "").strip().lower(),
+        "billing_class":      str(row.get("billing_class") or "").strip().lower(),
+    }
+
+
 def parse_hospital_csv(hospital: dict) -> list[dict]:
     """
-    Parse one hospital CSV into normalized rows.
+    Parse one hospital file (CSV or XLSX) into normalized rows.
 
-    Handles both lowercase column names (St. Francis, Riddle) and
-    Title/Pascal case column names (Jefferson Methodist) by lowercasing
-    all headers at read time.
+    CSV: handles both lowercase (St. Francis, Riddle) and Title/Pascal case
+         (Jefferson Methodist) column names by lowercasing headers at read time.
+    XLSX: reads via openpyxl; same 2-row metadata header structure as CSV.
+          Requires 'xlsx_sheet' key in hospital dict (defaults to first sheet).
     """
     path = os.path.join(DATA_DIR, hospital["filename"])
     if not os.path.exists(path):
         print(f"  SKIPPED (file not found): {hospital['filename']}")
         return []
 
+    ext = os.path.splitext(hospital["filename"])[1].lower()
     rows = []
     t0 = time.time()
-    print(f"  Parsing {hospital['hospital_name']} …")
+    print(f"  Parsing {hospital['hospital_name']} ({ext}) …")
 
-    with open(path, encoding="utf-8-sig", errors="replace") as f:
-        next(f)  # hospital metadata header row
-        next(f)  # hospital metadata values row
-        reader = csv.DictReader(f)
-        # Normalize column names to lowercase — handles both format variants
-        reader.fieldnames = [h.lower() for h in reader.fieldnames]
+    if ext == ".xlsx":
+        if not XLSX_AVAILABLE:
+            print("  SKIPPED — openpyxl not installed. Run: pip install openpyxl")
+            return []
 
-        for i, row in enumerate(reader):
-            cpt_code = None
-            for slot in range(1, 6):
-                code  = row.get(f"code|{slot}", "").strip()
-                ctype = row.get(f"code|{slot}|type", "").strip().upper()
-                if ctype in ("CPT", "HCPCS") and code in PROCEDURE_CODES:
-                    cpt_code = code
-                    break
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        sheet_name = hospital.get("xlsx_sheet", wb.sheetnames[0])
+        ws = wb[sheet_name]
+        iter_rows = ws.iter_rows(values_only=True)
 
-            if not cpt_code:
-                continue
+        next(iter_rows)  # metadata header row
+        next(iter_rows)  # metadata values row
+        headers = [str(h).lower() if h is not None else "" for h in next(iter_rows)]
 
-            negotiated = safe_float(row.get("standard_charge|negotiated_dollar"))
-            cash       = safe_float(row.get("standard_charge|discounted_cash"))
-            gross      = safe_float(row.get("standard_charge|gross"))
-
-            if negotiated is None and cash is None:
-                continue
-
-            payer = re.sub(r"\s+", " ", row.get("payer_name", "").strip().upper())
-
-            rows.append({
-                "hospital_name":      hospital["hospital_name"],
-                "hospital_city":      hospital["hospital_city"],
-                "hospital_state":     hospital["hospital_state"],
-                "hospital_address":   hospital["hospital_address"],
-                "procedure_category": PROCEDURE_CATEGORIES[cpt_code],
-                "procedure_name":     PROCEDURE_CODES[cpt_code],
-                "cpt_code":           cpt_code,
-                "payer":              payer,
-                "plan":               row.get("plan_name", "").strip(),
-                "negotiated_dollar":  negotiated,
-                "discounted_cash":    cash,
-                "gross_charge":       gross,
-                "setting":            row.get("setting", "").strip().lower(),
-                "billing_class":      row.get("billing_class", "").strip().lower(),
-            })
-
-            if i % 500_000 == 0 and i > 0:
+        for i, raw_row in enumerate(iter_rows):
+            row = dict(zip(headers, raw_row))
+            result = _process_row(hospital, row)
+            if result:
+                rows.append(result)
+            if i % 100_000 == 0 and i > 0:
                 print(f"    … {i:,} rows scanned ({len(rows):,} matches)")
+
+        wb.close()
+
+    else:
+        with open(path, encoding="utf-8-sig", errors="replace") as f:
+            next(f)  # metadata header row
+            next(f)  # metadata values row
+            reader = csv.DictReader(f)
+            reader.fieldnames = [h.lower() for h in reader.fieldnames]
+
+            for i, row in enumerate(reader):
+                result = _process_row(hospital, row)
+                if result:
+                    rows.append(result)
+                if i % 500_000 == 0 and i > 0:
+                    print(f"    … {i:,} rows scanned ({len(rows):,} matches)")
 
     print(f"  Done: {len(rows):,} rows in {time.time() - t0:.1f}s")
     return rows
