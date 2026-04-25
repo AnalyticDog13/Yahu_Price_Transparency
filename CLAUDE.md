@@ -45,7 +45,7 @@ Yahu_Price_Transparency/
 │   ├── parse_prices.py        ← data pipeline (Pete's domain)
 │   ├── static/
 │   │   └── data/
-│   │       └── prices.db      ← SQLite database (the handoff artifact)
+│   │       └── prices.csv     ← normalized CSV (the handoff artifact)
 │   └── templates/
 │       └── index.html         ← frontend UI (Will's domain)
 ```
@@ -56,7 +56,7 @@ Yahu_Price_Transparency/
 
 ### Workflow 1 — Data Pipeline (Pete's Job)
 
-Pete owns everything from raw CSV to `prices.db`. Will never touches this.
+Pete owns everything from raw CSV to `prices.csv`. Will never touches this.
 
 ```
 For each hospital:
@@ -75,9 +75,10 @@ For each hospital:
        Scans millions of rows, matches 35 CPT codes, normalizes payer names
        Takes ~15 seconds per hospital file
 
-4. Output: clearcare/static/data/prices.db
-   └── One clean SQLite table regardless of source hospital format
-       Two tables: prices and procedure_categories
+4. Output: clearcare/static/data/prices.csv
+   └── One clean, flat CSV regardless of source hospital format
+       Columns: hospital, cpt_code, procedure_name, description, payer, plan,
+                setting, billing_class, negotiated_dollar, discounted_cash, gross_charge
        This is the only artifact Will depends on
 ```
 
@@ -95,7 +96,7 @@ MRI Brain (70551–70553), MRI Cervical/Thoracic/Lumbar Spine, MRI Knee/Joint (7
 
 ### Workflow 2 — Website (Will's Job)
 
-Will owns the Flask app and frontend. Pete's `prices.db` is the only input.
+Will owns the Flask app and frontend. Pete's `prices.csv` is the only input.
 
 ```
 User flow:
@@ -144,14 +145,14 @@ This is the core financial logic. It must be correct. Test it with known inputs.
 
 ## The Handoff
 
-**`prices.db` is the contract between the two workflows.**
+**`prices.csv` is the contract between the two workflows.**
 
 - Pete produces it by running `parse_prices.py`
-- Will reads from it via the Flask API
+- Will reads from it via the Flask API (loaded into memory at request time, or cached at startup)
 - Will never modifies the raw CSVs or the parser
 - Pete never touches `app.py` or `index.html`
 
-If `prices.db` doesn't exist, the Flask app fails on startup with a clear error message — that's intentional.
+If `prices.csv` doesn't exist, the Flask app fails on startup with a clear error message — that's intentional.
 
 ---
 
@@ -165,8 +166,8 @@ If `prices.db` doesn't exist, the Flask app fails on startup with a clear error 
 **Not done / needs work:**
 - Only 2 hospitals registered (St. Francis Wilmington DE + Riddle Memorial) — need 10–15
 - No geographic concentration yet — need hospitals in a single metro area for the demo to be compelling
-- No `requirements.txt` — needs Flask at minimum
-- No `prices.db` in repo (correct — it's generated locally from raw CSVs)
+- No `requirements.txt` — needs Flask and pandas at minimum
+- No `prices.csv` in repo (correct — it's generated locally from raw CSVs)
 - No tests written
 
 **Honest assessment:** The pipeline and UI are functionally complete. The bottleneck is data volume. Two hospitals in Delaware is not a compelling demo. The work remaining is almost entirely Pete downloading CSVs and registering hospitals — not engineering. Will's job is mostly done unless new features are needed.
@@ -179,7 +180,7 @@ If `prices.db` doesn't exist, the Flask app fails on startup with a clear error 
 # 1. Install dependencies
 pip install flask
 
-# 2. Build the database (Pete's step — requires raw CSVs in hospital-price-data/)
+# 2. Build prices.csv (Pete's step — requires raw CSVs in hospital-price-data/)
 python3 clearcare/parse_prices.py
 
 # 3. Start the web app
@@ -194,7 +195,7 @@ python3 clearcare/app.py
 Run after every change:
 
 - [ ] `GET /api/procedures` returns 13 categories with correct CPT codes
-- [ ] `GET /api/payers?codes=70551,70552,70553` returns non-empty list when DB has data
+- [ ] `GET /api/payers?codes=70551,70552,70553` returns non-empty list when prices.csv has data
 - [ ] `GET /api/prices?codes=70551&payer=AETNA&deductible_met=yes&coinsurance=20` returns results sorted by `estimated_oop`
 - [ ] OOP math: negotiated=$1000, deductible_met=yes, coinsurance=20% → oop=$200
 - [ ] OOP math: negotiated=$1000, deductible_remaining=$600, coinsurance=20% → oop=$600 + ($400×0.20) = $680
