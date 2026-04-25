@@ -117,6 +117,24 @@ To scale to all ~6,000 US hospitals:
 
 ## How to Run
 
+### Quick start (for teammates — no raw data files needed)
+
+`prices.csv` is committed to the repo, so you can run the website immediately after cloning:
+
+```bash
+git clone https://github.com/AnalyticDog13/Yahu_Price_Transparency.git
+cd Yahu_Price_Transparency
+pip install -r requirements.txt
+cd clearcare/backend
+python3 app.py
+```
+
+Open **http://localhost:5001**. The server auto-builds `prices.db` from `prices.csv` on first run.
+
+---
+
+### Full pipeline (Pete's setup — requires raw CSVs in `hospital-price-data/`)
+
 **Prerequisites:** Python 3.10+
 
 ```bash
